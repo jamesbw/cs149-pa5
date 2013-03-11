@@ -20,8 +20,9 @@
 
 
 
-__device__ float roots_real[SIZE];
-__device__ float roots_imag[SIZE];
+__device__ float roots_real[SIZE / 2];
+__device__ float roots_imag[SIZE / 2];
+// __device__ int bit_reverse[SIZE];
 
 
 __global__ void populateRoots()
@@ -30,7 +31,16 @@ __global__ void populateRoots()
   float angle = -2 * PI * index / SIZE;
   roots_real[index] = cos(angle);
   roots_imag[index] = sin(angle);
+
+
 }
+
+// __device__ void fft(float *real, float *imag, float *roots_real, float *roots_imag)
+// {
+//   int curr = 0;
+//   int next = 1;
+// }
+
 __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 {
   int row = blockIdx.x;
@@ -47,7 +57,6 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 
   int offset = row * SIZE + col;
 
-  //todo bit-reverse
   real[curr][col] = real_image[offset];
   imag[curr][col] = imag_image[offset];
   float angle = - 2 * PI * col / SIZE;
@@ -56,32 +65,64 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 
   __syncthreads();
 
-  for (int span = SIZE / 2, num_units = 1; span ; span >>= 1, num_units <<= 1)
+
+  int span = SIZE / 2;
+
+  for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
   {
-    int pos = col % (2 * span);
+    int pos = threadIdx.x % unit_size;
     if (pos < span)
     {
       //x1 = x1 + x2
-      real[next][col] = real[curr][col] + real[curr][col+span];
-      imag[next][col] = imag[curr][col] + imag[curr][col+span];
+      int new_pos = 2 * pos;
+      real[next][new_pos] = real[curr][col] + real[curr][col+span];
+      imag[next][new_pos] = imag[curr][col] + imag[curr][col+span];
     }
     else
     {
       // x2 = twiddle * (x1 - x2)
-      int twiddle_index = (pos % span) * num_units;
+      int new_pos = (pos - span) * 2 + 1;
+      int twiddle_index = pos * SIZE / (2 * unit_size);
       float twiddle_real = roots_real_local[twiddle_index];
       float twiddle_imag = roots_imag_local[twiddle_index];
       float r1 = real[curr][col - span];
       float r2 = real[curr][col];
       float i1 = imag[curr][col - span];
       float i2 = imag[curr][col];
-      real[next][col] = twiddle_real * (r1 - r2) - twiddle_imag * (i1 - i2);
-      imag[next][col] = twiddle_imag * (r1 - r2) + twiddle_real * (i1 - i2);
+      real[next][new_pos] = twiddle_real * (r1 - r2) - twiddle_imag * (i1 - i2);
+      imag[next][new_pos] = twiddle_imag * (r1 - r2) + twiddle_real * (i1 - i2);
     }
     __syncthreads();
     next = curr;
     curr = 1 - curr;
   }
+
+  // for (int span = SIZE / 2, num_units = 1; span ; span >>= 1, num_units <<= 1)
+  // {
+  //   int pos = col % (2 * span);
+  //   if (pos < span)
+  //   {
+  //     //x1 = x1 + x2
+  //     real[next][col] = real[curr][col] + real[curr][col+span];
+  //     imag[next][col] = imag[curr][col] + imag[curr][col+span];
+  //   }
+  //   else
+  //   {
+  //     // x2 = twiddle * (x1 - x2)
+  //     int twiddle_index = (pos % span) * num_units;
+  //     float twiddle_real = roots_real_local[twiddle_index];
+  //     float twiddle_imag = roots_imag_local[twiddle_index];
+  //     float r1 = real[curr][col - span];
+  //     float r2 = real[curr][col];
+  //     float i1 = imag[curr][col - span];
+  //     float i2 = imag[curr][col];
+  //     real[next][col] = twiddle_real * (r1 - r2) - twiddle_imag * (i1 - i2);
+  //     imag[next][col] = twiddle_imag * (r1 - r2) + twiddle_real * (i1 - i2);
+  //   }
+  //   __syncthreads();
+  //   next = curr;
+  //   curr = 1 - curr;
+  // }
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
@@ -361,7 +402,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   }
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
-  populateRoots<<<1, SIZE, 0, filterStream>>>();
+  populateRoots<<<1, SIZE / 2, 0, filterStream>>>();
 
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
