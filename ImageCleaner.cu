@@ -70,7 +70,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
   {
-    int pos = threadIdx.x % unit_size;
+    int pos_in_unit = threadIdx.x % unit_size;
+    int pos = threadIdx.x;
     if (pos < span)
     {
       //x1 = x1 + x2
@@ -82,7 +83,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
     {
       // x2 = twiddle * (x1 - x2)
       int new_pos = (pos - span) * 2 + 1;
-      int twiddle_index = pos * SIZE / (2 * unit_size);
+      int twiddle_index = pos_in_unit * SIZE / (2 * unit_size);
       float twiddle_real = roots_real_local[twiddle_index];
       float twiddle_imag = roots_imag_local[twiddle_index];
       float r1 = real[curr][col - span];
