@@ -42,12 +42,12 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
     printf("1st real row: \n");
     for (int i = 0; i < SIZE; ++i)
     {
-      printf("%f, ", real_image[row * SIZE + i]);
+      printf("%f, ", real[i]);
     }
     printf("\n1st imag row: \n");
     for (int i = 0; i < SIZE; ++i)
     {
-      printf("%f, ", imag_image[row * SIZE + i]);
+      printf("%f, ", imag[i]);
     }
   }
 
@@ -237,7 +237,33 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // Also note that you pass the pointers to the device memory to the kernel call
   exampleKernel<<<1,128,0,filterStream>>>(device_real,device_imag,size_x,size_y);
 
+  printf("\n1st row real\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", real_image[i]);
+  }
+  printf("\n1st row imag\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", imag_image[i]);
+  }
+
   forwardDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+
+  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+
+  printf("\n1st row tranform real\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", real_image[i]);
+  }
+  printf("\n1st row tranform imag\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", imag_image[i]);
+  }
+
   forwardDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
   filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
   inverseDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
