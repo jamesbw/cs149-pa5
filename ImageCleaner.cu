@@ -31,6 +31,59 @@ __global__ void populateRoots()
   roots_real[index] = cos(angle);
   roots_imag[index] = sin(angle);
 }
+__global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
+{
+  int row = blockIdx.x;
+  int col = threadIdx.x;
+
+  __shared__ float real[2][SIZE];
+  __shared__ float imag[2][SIZE];
+  __shared__ float roots_real_local[SIZE];
+  __shared__ float roots_imag_local[SIZE];
+
+  //copy into second array
+  int curr = 0;
+  int next = 1;
+
+  int offset = row * SIZE + col;
+
+  //todo bit-reverse
+  real[curr][col] = real_image[offset];
+  imag[curr][col] = imag_image[offset];
+  float angle = - 2 * PI * col / SIZE;
+  roots_real_local[col] = __cosf(angle);
+  roots_imag_local[col] = __sinf(angle);
+
+  __syncthreads();
+
+  for (int span = SIZE / 2, num_units = 2; span ; span >>= 1, num_units <<= 1)
+  {
+    int pos = col % (2 * span);
+    if (pos < span)
+    {
+      //x1 = x1 + x2
+      real[next][col] = real[curr][col] + real[curr][col+span];
+      imag[next][col] = imag[curr][col] + imag[curr][col+span];
+    }
+    else
+    {
+      // x2 = twiddle * (x1 - x2)
+      int twiddle_index = (pos % span) * num_units;
+      float r1 = real[curr][col - span];
+      float r2 = real[curr][col];
+      float i1 = real[curr][col - span];
+      float i2 = real[curr][col];
+      real[next][col] = twiddle_real * (r1 - r2) - twiddle_imag * (i1 - i2);
+      imag[next][col] = twiddle_imag * (r1 - r2) + twiddle_real * (r1 - r2);
+    }
+    __syncthreads();
+    next = curr;
+    curr = 1 - curr;
+  }
+
+  real_image[offset] = real[curr][col];
+  imag_image[offset] = imag[curr][col];
+}
 
 __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
 {
@@ -315,21 +368,21 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
 
-  forwardDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
 
-  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
-  // printf("\n1st row tranform real\n");
-  // for (int i = 0; i < size; ++i)
-  // {
-  //   printf("%f, ", real_image[i]);
-  // }
-  // printf("\n1st row tranform imag\n");
-  // for (int i = 0; i < size; ++i)
-  // {
-  //   printf("%f, ", imag_image[i]);
-  // }
+  printf("\n1st row tranform real\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", real_image[i]);
+  }
+  printf("\n1st row tranform imag\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", imag_image[i]);
+  }
 
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
