@@ -39,11 +39,15 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
 
   __shared__ float real[SIZE];
   __shared__ float imag[SIZE];
+  __shared__ float roots_real_local[SIZE];
+  __shared__ float roots_imag_local[SIZE];
 
   int offset = row * SIZE + col;
 
   real[col] = real_image[offset];
   imag[col] = imag_image[offset];
+  roots_real_local[col] = roots_real[col];
+  roots_imag_local[col] = roots_imag[col];
 
   __syncthreads();
 
@@ -67,8 +71,8 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
   for (int n = 0; n < SIZE; ++n)
   {
     int index = n * col % SIZE;
-    float root_real = roots_real[index];
-    float root_imag = roots_imag[index];
+    float root_real = roots_real_local[index];
+    float root_imag = roots_imag_local[index];
 
     real_val += real[n]* root_real - imag[n]* root_imag;
     imag_val += imag[n]* root_real + real[n]* root_imag;
