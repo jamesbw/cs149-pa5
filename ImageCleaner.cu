@@ -18,6 +18,12 @@
 // BEGIN ADD KERNEL DEFINITIONS
 //----------------------------------------------------------------
 
+
+
+__device__ float roots_real[SIZE];
+__device__ float roots_imag[SIZE];
+
+
 __global__ void populateRoots()
 {
   int index = threadIdx.x;
@@ -248,9 +254,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // {
   //   printf("%f, ", imag_image[i]);
   // }
-
-  __device__ float roots_real[SIZE];
-  __device__ float roots_imag[SIZE];
 
   populateRoots<<<1, SIZE, 0, filterStream>>>();
 
