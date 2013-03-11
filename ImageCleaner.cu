@@ -49,8 +49,8 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
   // roots_real_local[col] = roots_real[col];
   // roots_imag_local[col] = roots_imag[col];
   float angle = - 2 * PI * col / SIZE;
-  roots_real_local[col] = __cosf(angle);
-  roots_imag_local[col] = __sinf(angle);
+  roots_real_local[col] = cosf(angle);
+  roots_imag_local[col] = sinf(angle);
 
   __syncthreads();
 
@@ -107,8 +107,8 @@ __global__ void forwardDFTCol(float *real_image, float *imag_image, int size)
   real[row] = real_image[row * SIZE + col];
   imag[row] = imag_image[row * SIZE + col];
   float angle = - 2 * PI * row / SIZE;
-  roots_real_local[col] = __cosf(angle);
-  roots_imag_local[col] = __sinf(angle);
+  roots_real_local[col] = cosf(angle);
+  roots_imag_local[col] = sinf(angle);
 
   __syncthreads();
 
@@ -158,8 +158,8 @@ __global__ void inverseDFTRow(float *real_image, float *imag_image, int size)
   real[col] = real_image[row * SIZE + col];
   imag[col] = imag_image[row * SIZE + col];
   float angle = - 2 * PI * col / SIZE;
-  roots_real_local[col] = __cosf(angle);
-  roots_imag_local[col] = __sinf(angle);
+  roots_real_local[col] = cosf(angle);
+  roots_imag_local[col] = sinf(angle);
 
   __syncthreads();
 
@@ -194,8 +194,8 @@ __global__ void inverseDFTCol(float *real_image, float *imag_image, int size)
   real[row] = real_image[row * SIZE + col];
   imag[row] = imag_image[row * SIZE + col];
   float angle = - 2 * PI * row / SIZE;
-  roots_real_local[col] = __cosf(angle);
-  roots_imag_local[col] = __sinf(angle);
+  roots_real_local[col] = cosf(angle);
+  roots_imag_local[col] = sinf(angle);
 
   __syncthreads();
 
