@@ -87,9 +87,9 @@ __global__ void filter(float *real_image, float *imag_image, int size)
   int col = threadIdx.x;
 
   int eighth = size / 8;
-  int 7eighth = size - eighth;
+  int seven_eighth = size - eighth;
 
-  if ((row >= eighth && row < 7eighth) || (col >= eighth && col < 7eighth))
+  if ((row >= eighth && row < seven_eighth) || (col >= eighth && col < seven_eighth))
   {
     real_image[row * SIZE + col] = 0.f;
     imag_image[row * SIZE + col] = 0.f;
