@@ -73,8 +73,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
       float twiddle_imag = roots_imag_local[twiddle_index];
       float r1 = real[curr][col - span];
       float r2 = real[curr][col];
-      float i1 = real[curr][col - span];
-      float i2 = real[curr][col];
+      float i1 = imag[curr][col - span];
+      float i2 = imag[curr][col];
       real[next][col] = twiddle_real * (r1 - r2) - twiddle_imag * (i1 - i2);
       imag[next][col] = twiddle_imag * (r1 - r2) + twiddle_real * (i1 - i2);
     }
