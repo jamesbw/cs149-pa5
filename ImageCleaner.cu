@@ -7,6 +7,9 @@
 #error Please define SIZEY.
 #endif
 
+#define SIZE SIZEX
+#define PI  3.14159256f
+
 //----------------------------------------------------------------
 // TODO:  CREATE NEW KERNELS HERE.  YOU CAN PLACE YOUR CALLS TO
 //        THEM IN THE INDICATED SECTION INSIDE THE 'filterImage'
@@ -21,6 +24,134 @@ __global__ void exampleKernel(float *real_image, float *imag_image, int size_x, 
   // Currently does nothing
 }
 
+__global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
+{
+  int row = blockIdx.x;
+  int col = threadIdx.x;
+
+  __shared__ float real[SIZE];
+  __shared__ float imag[SIZE];
+
+  real[col] = real_image[row * SIZE + col];
+  imag[col] = imag_image[row * SIZE + col];
+
+  __syncthreads();
+
+  float real_val = 0.f;
+  float imag_val = 0.f;
+
+  for (int n = 0; n < SIZE; ++n)
+  {
+    float angle = -2 * PI * col * n / size;
+
+    real_val += (real[col]* cos(angle)) - (imag[col]* sin(angle));
+    imag_val += (imag[col]* cos(angle)) + (real[col]* sin(angle));
+  }
+
+  real_image[row * SIZE + col] = real_val;
+  imag_image[row * SIZE + col] = imag_val;
+
+}
+
+__global__ void forwardDFTCol(float *real_image, float *imag_image, int size)
+{
+  int col = blockIdx.x;
+  int row = threadIdx.x;
+
+  __shared__ float real[SIZE];
+  __shared__ float imag[SIZE];
+
+  real[row] = real_image[row * SIZE + col];
+  imag[row] = imag_image[row * SIZE + col];
+
+  __syncthreads();
+
+  float real_val = 0.f;
+  float imag_val = 0.f;
+
+  for (int n = 0; n < SIZE; ++n)
+  {
+    float angle = -2 * PI * row * n / size;
+
+    real_val += (real[row]* cos(angle)) - (imag[row]* sin(angle));
+    imag_val += (imag[row]* cos(angle)) + (real[row]* sin(angle));
+  }
+
+  real_image[row * SIZE + col] = real_val;
+  imag_image[row * SIZE + col] = imag_val;
+}
+
+__global__ void filter(float *real_image, float *imag_image, int size)
+{
+  int row = blockIdx.x;
+  int col = threadIdx.x;
+
+  int eighth = size / 8;
+  int 7eighth = size - eighth;
+
+  if ((row >= eighth && row < 7eighth) || (col >= eighth && col < 7eighth))
+  {
+    real_image[row * SIZE + col] = 0.f;
+    imag_image[row * SIZE + col] = 0.f;
+  }
+}
+
+__global__ void inverseDFTRow(float *real_image, float *imag_image, int size)
+{
+  int row = blockIdx.x;
+  int col = threadIdx.x;
+
+  __shared__ float real[SIZE];
+  __shared__ float imag[SIZE];
+
+  real[col] = real_image[row * SIZE + col];
+  imag[col] = imag_image[row * SIZE + col];
+
+  __syncthreads();
+
+  float real_val = 0.f;
+  float imag_val = 0.f;
+
+  for (int n = 0; n < SIZE; ++n)
+  {
+    float angle = 2 * PI * col * n / size;
+
+    real_val += (real[col]* cos(angle)) - (imag[col]* sin(angle));
+    imag_val += (imag[col]* cos(angle)) + (real[col]* sin(angle));
+  }
+
+  real_image[row * SIZE + col] = real_val / size;
+  imag_image[row * SIZE + col] = imag_val / size;
+}
+
+__global__ void inverseDFTCol(float *real_image, float *imag_image, int size)
+{
+  int col = blockIdx.x;
+  int row = threadIdx.x;
+
+  __shared__ float real[SIZE];
+  __shared__ float imag[SIZE];
+
+  real[row] = real_image[row * SIZE + col];
+  imag[row] = imag_image[row * SIZE + col];
+
+  __syncthreads();
+
+  float real_val = 0.f;
+  float imag_val = 0.f;
+
+  for (int n = 0; n < SIZE; ++n)
+  {
+    float angle = 2 * PI * row * n / size;
+
+    real_val += (real[row]* cos(angle)) - (imag[row]* sin(angle));
+    imag_val += (imag[row]* cos(angle)) + (real[row]* sin(angle));
+  }
+
+  real_image[row * SIZE + col] = real_val / size;
+  imag_image[row * SIZE + col] = imag_val / size;
+}
+
 //----------------------------------------------------------------
 // END ADD KERNEL DEFINTIONS
 //----------------------------------------------------------------
@@ -30,6 +161,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // check that the sizes match up
   assert(size_x == SIZEX);
   assert(size_y == SIZEY);
+
+  int size = size_x;
 
   int matSize = size_x * size_y * sizeof(float);
 
@@ -81,6 +214,12 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //
   // Also note that you pass the pointers to the device memory to the kernel call
   exampleKernel<<<1,128,0,filterStream>>>(device_real,device_imag,size_x,size_y);
+
+  forwardDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  forwardDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  inverseDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  inverseDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
 
   //---------------------------------------------------------------- 
   // END ADD KERNEL CALLS
