@@ -56,7 +56,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 
   __syncthreads();
 
-  for (int span = SIZE / 2, num_units = 2; span ; span >>= 1, num_units <<= 1)
+  for (int span = SIZE / 2, num_units = 1; span ; span >>= 1, num_units <<= 1)
   {
     int pos = col % (2 * span);
     if (pos < span)
