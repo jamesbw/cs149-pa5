@@ -98,6 +98,10 @@ __global__ void forwardDFTCol(float *real_image, float *imag_image, int size)
 {
   int col = blockIdx.x;
   int row = threadIdx.x;
+  if (col >= SIZE / 8)
+  {
+    col += 3 * SIZE / 4;
+  }
 
   __shared__ float real[SIZE];
   __shared__ float imag[SIZE];
@@ -147,7 +151,12 @@ __global__ void filter(float *real_image, float *imag_image, int size)
 
 __global__ void inverseDFTRow(float *real_image, float *imag_image, int size)
 {
+
   int row = blockIdx.x;
+  if (row >= SIZE / 8)
+  {
+    row += 3 * SIZE / 4;
+  }
   int col = threadIdx.x;
 
   __shared__ float real[SIZE];
@@ -328,7 +337,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
-  forwardDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  forwardDFTCol<<<SIZE / 4, SIZE, 0, filterStream>>>(device_real, device_imag, size);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&fftc,start_bis,stop_bis));
@@ -340,7 +349,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&filter_time,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
-  inverseDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  inverseDFTRow<<<SIZE / 4, SIZE, 0, filterStream>>>(device_real, device_imag, size);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftr,start_bis,stop_bis));
