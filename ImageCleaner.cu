@@ -200,8 +200,14 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   float transferDown = 0, transferUp = 0, execution = 0;
   cudaEvent_t start,stop;
 
+  float fftr = 0.f, fftc = 0.f, ifftr = 0.f, ifftc = 0.f, filter = 0.f, roots = 0.f;
+  cudaEvent_t start_bis, stop_bis;
+
   CUDA_ERROR_CHECK(cudaEventCreate(&start));
   CUDA_ERROR_CHECK(cudaEventCreate(&stop));
+
+  CUDA_ERROR_CHECK(cudaEventCreate(&start_bis));
+  CUDA_ERROR_CHECK(cudaEventCreate(&stop_bis));
 
   // Create a stream and initialize it
   cudaStream_t filterStream;
@@ -254,8 +260,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // {
   //   printf("%f, ", imag_image[i]);
   // }
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
   populateRoots<<<1, SIZE, 0, filterStream>>>();
+
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&roots,start_bis,stop_bis));
+
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
+
 
   forwardDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
 
@@ -273,19 +287,44 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //   printf("%f, ", imag_image[i]);
   // }
 
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&fftr,start_bis,stop_bis));
+
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
+
   forwardDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&fftc,start_bis,stop_bis));
+
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&filter,start_bis,stop_bis));
+
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   inverseDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftr,start_bis,stop_bis));
+
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   inverseDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftc,start_bis,stop_bis));
+
 
   //---------------------------------------------------------------- 
   // END ADD KERNEL CALLS
   //----------------------------------------------------------------
 
   // Finish timimg for the execution 
-  CUDA_ERROR_CHECK(cudaEventRecord(stop,filterStream));
-  CUDA_ERROR_CHECK(cudaEventSynchronize(stop));
-  CUDA_ERROR_CHECK(cudaEventElapsedTime(&execution,start,stop));
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&execution,start,stop_bis));
 
   // Start timing for the transfer up
   CUDA_ERROR_CHECK(cudaEventRecord(start,filterStream));
@@ -318,6 +357,13 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   printf("  Device to Host Transfer Time: %f ms\n", transferUp);
   float totalTime = transferDown + execution + transferUp;
   printf("  Total CUDA Execution Time: %f ms\n\n", totalTime);
+
+  printf("  Roots Time: %f ms\n\n", roots);
+  printf("  Row DFT Time: %f ms\n\n", fftr);
+  printf("  Col DFT Time: %f ms\n\n", fftc);
+  printf("  Filter Time: %f ms\n\n", filter);
+  printf("  Row IDFT Time: %f ms\n\n", ifftr);
+  printf("  Col IDFT Time: %f ms\n\n", ifftc);
   // Return the total time to transfer and execute
   return totalTime;
 }
