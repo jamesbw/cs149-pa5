@@ -101,10 +101,10 @@ __global__ void forwardDFTCol(float *real_image, float *imag_image, int size)
 
   for (int n = 0; n < SIZE; ++n)
   {
-    float angle = -2 * PI * row * n / size;
+    int index = n * row % SIZE;
 
-    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
-    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
+    real_val += real[n]* roots_real[index] - imag[n]* roots_imag[index];
+    imag_val += imag[n]* roots_real[index] + real[n]* roots_imag[index];
   }
 
   real_image[row * SIZE + col] = real_val;
@@ -144,10 +144,10 @@ __global__ void inverseDFTRow(float *real_image, float *imag_image, int size)
 
   for (int n = 0; n < SIZE; ++n)
   {
-    float angle = 2 * PI * col * n / size;
+    int index = n * col % SIZE;
 
-    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
-    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
+    real_val += real[n]* roots_real[index] + imag[n]* roots_imag[index];
+    imag_val += imag[n]* roots_real[index] - real[n]* roots_imag[index];
   }
 
   real_image[row * SIZE + col] = real_val / size;
@@ -172,10 +172,10 @@ __global__ void inverseDFTCol(float *real_image, float *imag_image, int size)
 
   for (int n = 0; n < SIZE; ++n)
   {
-    float angle = 2 * PI * row * n / size;
+    int index = n * row % SIZE;
 
-    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
-    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
+    real_val += real[n]* roots_real[index] + imag[n]* roots_imag[index];
+    imag_val += imag[n]* roots_real[index] - real[n]* roots_imag[index];
   }
 
   real_image[row * SIZE + col] = real_val / size;
@@ -259,19 +259,19 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   forwardDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
 
-  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
-  printf("\n1st row tranform real\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row tranform imag\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row tranform real\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row tranform imag\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
 
   forwardDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
   filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
