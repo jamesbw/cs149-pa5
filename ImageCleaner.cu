@@ -200,7 +200,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   float transferDown = 0, transferUp = 0, execution = 0;
   cudaEvent_t start,stop;
 
-  float fftr = 0.f, fftc = 0.f, ifftr = 0.f, ifftc = 0.f, filter = 0.f, roots = 0.f;
+  float fftr = 0.f, fftc = 0.f, ifftr = 0.f, ifftc = 0.f, filter_time = 0.f, roots = 0.f;
   cudaEvent_t start_bis, stop_bis;
 
   CUDA_ERROR_CHECK(cudaEventCreate(&start));
@@ -302,7 +302,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
-  CUDA_ERROR_CHECK(cudaEventElapsedTime(&filter,start_bis,stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&filter_time,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   inverseDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
@@ -361,7 +361,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   printf("  Roots Time: %f ms\n\n", roots);
   printf("  Row DFT Time: %f ms\n\n", fftr);
   printf("  Col DFT Time: %f ms\n\n", fftc);
-  printf("  Filter Time: %f ms\n\n", filter);
+  printf("  Filter Time: %f ms\n\n", filter_time);
   printf("  Row IDFT Time: %f ms\n\n", ifftr);
   printf("  Col IDFT Time: %f ms\n\n", ifftc);
   // Return the total time to transfer and execute
