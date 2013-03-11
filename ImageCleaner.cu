@@ -76,7 +76,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
       float i1 = real[curr][col - span];
       float i2 = real[curr][col];
       real[next][col] = twiddle_real * (r1 - r2) - twiddle_imag * (i1 - i2);
-      imag[next][col] = twiddle_imag * (r1 - r2) + twiddle_real * (r1 - r2);
+      imag[next][col] = twiddle_imag * (r1 - r2) + twiddle_real * (i1 - i2);
     }
     __syncthreads();
     next = curr;
