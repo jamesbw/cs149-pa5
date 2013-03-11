@@ -349,16 +349,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //
   // Also note that you pass the pointers to the device memory to the kernel call
 
-  // printf("\n1st row real\n");
-  // for (int i = 0; i < size; ++i)
-  // {
-  //   printf("%f, ", real_image[i]);
-  // }
-  // printf("\n1st row imag\n");
-  // for (int i = 0; i < size; ++i)
-  // {
-  //   printf("%f, ", imag_image[i]);
-  // }
+  printf("\n1st row real\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", real_image[i]);
+  }
+  printf("\n1st row imag\n");
+  for (int i = 0; i < size; ++i)
+  {
+    printf("%f, ", imag_image[i]);
+  }
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
   populateRoots<<<1, SIZE, 0, filterStream>>>();
