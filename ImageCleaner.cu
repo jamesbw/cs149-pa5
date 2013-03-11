@@ -49,8 +49,8 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
   // roots_real_local[col] = roots_real[col];
   // roots_imag_local[col] = roots_imag[col];
   float angle = - 2 * PI * col / SIZE;
-  roots_real_local[col] = __cos(angle);
-  roots_imag_local[col] = __sin(angle);
+  roots_real_local[col] = __cosf(angle);
+  roots_imag_local[col] = __sinf(angle);
 
   __syncthreads();
 
