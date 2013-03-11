@@ -18,10 +18,12 @@
 // BEGIN ADD KERNEL DEFINITIONS
 //----------------------------------------------------------------
 
-
-__global__ void exampleKernel(float *real_image, float *imag_image, int size_x, int size_y)
+__global__ void populateRoots()
 {
-  // Currently does nothing
+  int index = threadIdx.x;
+  float angle = -2 * PI * index / SIZE;
+  roots_real[index] = cos(angle);
+  roots_imag[index] = sin(angle);
 }
 
 __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
@@ -37,41 +39,41 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
 
   __syncthreads();
 
-  if(row == 0 && col == 0)
-  {
-    printf("\n1st real row: \n");
-    for (int i = 0; i < SIZE; ++i)
-    {
-      printf("%f, ", real[i]);
-    }
-    printf("\n1st imag row: \n");
-    for (int i = 0; i < SIZE; ++i)
-    {
-      printf("%f, ", imag[i]);
-    }
-  }
+  // if(row == 0 && col == 0)
+  // {
+  //   printf("\n1st real row: \n");
+  //   for (int i = 0; i < SIZE; ++i)
+  //   {
+  //     printf("%f, ", real[i]);
+  //   }
+  //   printf("\n1st imag row: \n");
+  //   for (int i = 0; i < SIZE; ++i)
+  //   {
+  //     printf("%f, ", imag[i]);
+  //   }
+  // }
 
   float real_val = 0.f;
   float imag_val = 0.f;
 
   for (int n = 0; n < SIZE; ++n)
   {
-    float angle = -2 * PI * col * n / size;
+    int index = n * col % SIZE;
 
-    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
-    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
+    real_val += real[n]* roots_real[index] - imag[n]* roots_imag[index];
+    imag_val += imag[n]* roots_real[index] + real[n]* roots_imag[index];
   }
 
   real_image[row * SIZE + col] = real_val;
   imag_image[row * SIZE + col] = imag_val;
 
-  if(row == 0 && col == 0)
-  {
-    printf("\n1st transform real: \n");
-    printf("%f, ", real_val);
-    printf("\n1st transform imag: \n");
-    printf("%f, ", imag_val);
-  }
+  // if(row == 0 && col == 0)
+  // {
+  //   printf("\n1st transform real: \n");
+  //   printf("%f, ", real_val);
+  //   printf("\n1st transform imag: \n");
+  //   printf("%f, ", imag_val);
+  // }
 
 }
 
@@ -235,18 +237,22 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //    4. Stream to execute kernel on, should always be 'filterStream'
   //
   // Also note that you pass the pointers to the device memory to the kernel call
-  exampleKernel<<<1,128,0,filterStream>>>(device_real,device_imag,size_x,size_y);
 
-  printf("\n1st row real\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row imag\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row real\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row imag\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
+
+  __device__ float roots_real[SIZE];
+  __device__ float roots_imag[SIZE];
+
+  populateRoots<<<1, SIZE, 0, filterStream>>>();
 
   forwardDFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
 
