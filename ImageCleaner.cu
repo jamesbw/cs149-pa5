@@ -37,6 +37,20 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
 
   __syncthreads();
 
+  if(row == 0 && col == 0)
+  {
+    printf("1st real row: \n");
+    for (int i = 0; i < SIZE; ++i)
+    {
+      printf("%f, ", real_image[row * SIZE + i]);
+    }
+    printf("\n1st imag row: \n");
+    for (int i = 0; i < SIZE; ++i)
+    {
+      printf("%f, ", imag_image[row * SIZE + i]);
+    }
+  }
+
   float real_val = 0.f;
   float imag_val = 0.f;
 
@@ -50,6 +64,14 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
 
   real_image[row * SIZE + col] = real_val;
   imag_image[row * SIZE + col] = imag_val;
+
+  if(row == 0 && col == 0)
+  {
+    printf("1st transform real: \n");
+    printf("%f, ", real_val);
+    printf("\n1st transform imag: \n");
+    printf("%f, ", imag_val);
+  }
 
 }
 
