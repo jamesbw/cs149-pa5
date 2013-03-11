@@ -39,7 +39,7 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
 
   if(row == 0 && col == 0)
   {
-    printf("1st real row: \n");
+    printf("\n1st real row: \n");
     for (int i = 0; i < SIZE; ++i)
     {
       printf("%f, ", real[i]);
@@ -58,8 +58,8 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
   {
     float angle = -2 * PI * col * n / size;
 
-    real_val += (real[col]* cos(angle)) - (imag[col]* sin(angle));
-    imag_val += (imag[col]* cos(angle)) + (real[col]* sin(angle));
+    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
+    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
   }
 
   real_image[row * SIZE + col] = real_val;
@@ -67,7 +67,7 @@ __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
 
   if(row == 0 && col == 0)
   {
-    printf("1st transform real: \n");
+    printf("\n1st transform real: \n");
     printf("%f, ", real_val);
     printf("\n1st transform imag: \n");
     printf("%f, ", imag_val);
@@ -95,8 +95,8 @@ __global__ void forwardDFTCol(float *real_image, float *imag_image, int size)
   {
     float angle = -2 * PI * row * n / size;
 
-    real_val += (real[row]* cos(angle)) - (imag[row]* sin(angle));
-    imag_val += (imag[row]* cos(angle)) + (real[row]* sin(angle));
+    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
+    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
   }
 
   real_image[row * SIZE + col] = real_val;
@@ -138,8 +138,8 @@ __global__ void inverseDFTRow(float *real_image, float *imag_image, int size)
   {
     float angle = 2 * PI * col * n / size;
 
-    real_val += (real[col]* cos(angle)) - (imag[col]* sin(angle));
-    imag_val += (imag[col]* cos(angle)) + (real[col]* sin(angle));
+    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
+    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
   }
 
   real_image[row * SIZE + col] = real_val / size;
@@ -166,8 +166,8 @@ __global__ void inverseDFTCol(float *real_image, float *imag_image, int size)
   {
     float angle = 2 * PI * row * n / size;
 
-    real_val += (real[row]* cos(angle)) - (imag[row]* sin(angle));
-    imag_val += (imag[row]* cos(angle)) + (real[row]* sin(angle));
+    real_val += (real[n]* cos(angle)) - (imag[n]* sin(angle));
+    imag_val += (imag[n]* cos(angle)) + (real[n]* sin(angle));
   }
 
   real_image[row * SIZE + col] = real_val / size;
