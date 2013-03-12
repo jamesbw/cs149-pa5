@@ -118,6 +118,27 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   imag_image[offset] = imag[curr][col];
 }
 
+__global__ void inverseFFTRow(float *real_image, float *imag_image)
+{
+  int row = blockIdx.x;
+  int col = threadIdx.x;
+
+  __shared__ float real[2][SIZE];
+  __shared__ float imag[2][SIZE];
+
+
+  int offset = row * SIZE + col;
+
+  real[0][col] = real_image[offset];
+  imag[0][col] = imag_image[offset];
+
+
+  char curr = fft(col, real, imag);
+
+  real_image[offset] = real[curr][col] / SIZE;
+  imag_image[offset] = imag[curr][col] / SIZE;
+}
+
 __global__ void forwardFFTCol(float *real_image, float *imag_image)
 {
   int col = blockIdx.x;
@@ -136,6 +157,26 @@ __global__ void forwardFFTCol(float *real_image, float *imag_image)
 
   real_image[row * SIZE + col] = real[curr][row];
   imag_image[row * SIZE + col] = imag[curr][row];
+}
+
+__global__ void inverseFFTCol(float *real_image, float *imag_image)
+{
+  int col = blockIdx.x;
+  int row = threadIdx.x;
+  if (col >= SIZE / 8)
+  {
+    col += 3 * SIZE / 4;
+  }
+  __shared__ float real[2][SIZE];
+  __shared__ float imag[2][SIZE];
+
+  real[0][row] = real_image[row * SIZE + col];
+  imag[0][row] = imag_image[row * SIZE + col];
+
+  char curr = fft(row, real, imag);
+
+  real_image[row * SIZE + col] = real[curr][row] / SIZE;
+  imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
 }
 
 __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
@@ -455,16 +496,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&filter_time,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
-  inverseDFTRow<<<SIZE / 4, SIZE, 0, filterStream>>>(device_real, device_imag, size);
-  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
-  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
-  CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftr,start_bis,stop_bis));
-
-  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
-  inverseDFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  inverseFFTCol<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftc,start_bis,stop_bis));
+
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
+  inverseFFTRow<<<SIZE / 4, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftr,start_bis,stop_bis));
 
 
   //---------------------------------------------------------------- 
@@ -512,8 +553,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   printf("  Row DFT Time: %f ms\n\n", fftr);
   printf("  Col DFT Time: %f ms\n\n", fftc);
   printf("  Filter Time: %f ms\n\n", filter_time);
-  printf("  Row IDFT Time: %f ms\n\n", ifftr);
   printf("  Col IDFT Time: %f ms\n\n", ifftc);
+  printf("  Row IDFT Time: %f ms\n\n", ifftr);
   // Return the total time to transfer and execute
   return totalTime;
 }
