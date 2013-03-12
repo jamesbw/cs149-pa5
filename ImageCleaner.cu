@@ -36,70 +36,26 @@ __global__ void populateRoots()
 
 }
 
-// __device__ void fft(float *real, float *imag, float *roots_real, float *roots_imag)
-// {
-//   int curr = 0;
-//   int next = 1;
-// }
-
-__global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
+__device__ void fft(float *real, float *imag)
 {
-  int row = blockIdx.x;
-  int col = threadIdx.x;
-
-  __shared__ float real[2][SIZE];
-  __shared__ float imag[2][SIZE];
-  __shared__ float roots_real_local[SIZE];
-  __shared__ float roots_imag_local[SIZE];
-
   //copy into second array
-  char curr = 0;
-  char next = 1;
 
-  int offset = row * SIZE + col;
+  __shared__ float roots_real_local[SIZE/2];
+  __shared__ float roots_imag_local[SIZE/2];
 
-  real[curr][col] = real_image[offset];
-  imag[curr][col] = imag_image[offset];
   float angle = - TWO_PI * col / SIZE;
   roots_real_local[col] = __cosf(angle);
   roots_imag_local[col] = __sinf(angle);
 
   __syncthreads();
 
+  char curr = 0;
+  char next = 1;
 
   int span = SIZE >> 1;
   int temp;
 
-  // // hard coded unit_size = 1
-  if (col < span)
-  {
-    //x1 = x1 + twiddle * x2
-    temp = col + span;
-    float r1 = real[curr][col];
-    float r2 = real[curr][temp];
-    float i1 = imag[curr][col];
-    float i2 = imag[curr][temp];
-    temp = col << 1;
-    real[next][temp] = r1 + r2;
-    imag[next][temp] = i1 + i2;
-  }
-  else
-  {
-    // x2 = x1 - twiddle *x2
-    temp = col - span;
-    float r1 = real[curr][temp];
-    float r2 = real[curr][col];
-    float i1 = imag[curr][temp];
-    float i2 = imag[curr][col];
-    temp = ((col - span) << 1) + 1;
-    real[next][temp] = r1 - r2;
-    imag[next][temp] = i1 - i2;
-  }
-  __syncthreads();
-  next = curr;
-  curr = 1 - curr;
-
-  for (int unit_size = 2; unit_size < SIZE ; unit_size <<= 1)
+  for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
   {
     int pos_in_unit = col % unit_size;
     temp = pos_in_unit * (SIZE >> 1) / unit_size; // twiddle index
@@ -134,6 +90,24 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
     next = curr;
     curr = 1 - curr;
   }
+}
+
+__global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
+{
+  int row = blockIdx.x;
+  int col = threadIdx.x;
+
+  __shared__ float real[2][SIZE];
+  __shared__ float imag[2][SIZE];
+
+
+  int offset = row * SIZE + col;
+
+  real[0][col] = real_image[offset];
+  imag[0][col] = imag_image[offset];
+
+
+  fft(real, image);
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
