@@ -22,8 +22,6 @@
 
 __device__ char forwardFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 {
-  //copy into second array
-
   __shared__ float roots_real_local[SIZE/2];
   __shared__ float roots_imag_local[SIZE/2];
 
@@ -53,24 +51,24 @@ __device__ char forwardFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
     if (pos < span)
     {
       //x1 = x1 + twiddle * x2
-      temp = pos + span;
+      temp = pos + span; // index of x2
       float r1 = real[curr][pos];
       float r2 = real[curr][temp];
       float i1 = imag[curr][pos];
       float i2 = imag[curr][temp];
-      temp = (pos << 1) - pos_in_unit;
+      temp = (pos << 1) - pos_in_unit; //new index of x1
       real[next][temp] = r1 + (twiddle_real * r2 - twiddle_imag * i2);
       imag[next][temp] = i1 + (twiddle_real * i2 + twiddle_imag * r2);
     }
     else
     {
       // x2 = x1 - twiddle *x2
-      temp = pos - span;
+      temp = pos - span; // index of x1
       float r1 = real[curr][temp];
       float r2 = real[curr][pos];
       float i1 = imag[curr][temp];
       float i2 = imag[curr][pos];
-      temp = ((pos - span) << 1) - pos_in_unit + unit_size;
+      temp = ((pos - span) << 1) - pos_in_unit + unit_size; //new index of x2
       real[next][temp] = r1 - (twiddle_real * r2 - twiddle_imag * i2);
       imag[next][temp] = i1 - (twiddle_real * i2 + twiddle_imag * r2);
     }
@@ -83,8 +81,6 @@ __device__ char forwardFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 
 __device__ char inverseFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 {
-  //copy into second array
-
   __shared__ float roots_real_local[SIZE/2];
   __shared__ float roots_imag_local[SIZE/2];
 
@@ -114,24 +110,24 @@ __device__ char inverseFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
     if (pos < span)
     {
       //x1 = x1 + twiddle * x2
-      temp = pos + span;
+      temp = pos + span; // index of x2
       float r1 = real[curr][pos];
       float r2 = real[curr][temp];
       float i1 = imag[curr][pos];
       float i2 = imag[curr][temp];
-      temp = (pos << 1) - pos_in_unit;
+      temp = (pos << 1) - pos_in_unit; //new index of x1
       real[next][temp] = r1 + (twiddle_real * r2 - twiddle_imag * i2);
       imag[next][temp] = i1 + (twiddle_real * i2 + twiddle_imag * r2);
     }
     else
     {
       // x2 = x1 - twiddle *x2
-      temp = pos - span;
+      temp = pos - span; // index of x1
       float r1 = real[curr][temp];
       float r2 = real[curr][pos];
       float i1 = imag[curr][temp];
       float i2 = imag[curr][pos];
-      temp = ((pos - span) << 1) - pos_in_unit + unit_size;
+      temp = ((pos - span) << 1) - pos_in_unit + unit_size; //new index of x2
       real[next][temp] = r1 - (twiddle_real * r2 - twiddle_imag * i2);
       imag[next][temp] = i1 - (twiddle_real * i2 + twiddle_imag * r2);
     }
