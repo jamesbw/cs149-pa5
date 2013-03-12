@@ -36,7 +36,7 @@ __global__ void populateRoots()
 
 }
 
-__device__ char fft(int pos, float *real[], float *imag[])
+__device__ char fft(int pos, float (*real)[2], float (*imag)[2])
 {
   //copy into second array
 
