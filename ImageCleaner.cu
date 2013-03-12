@@ -20,22 +20,6 @@
 //----------------------------------------------------------------
 
 
-
-__device__ float roots_real[SIZE / 2];
-__device__ float roots_imag[SIZE / 2];
-// __device__ int bit_reverse[SIZE];
-
-
-__global__ void populateRoots()
-{
-  int index = threadIdx.x;
-  float angle = -2 * PI * index / SIZE;
-  roots_real[index] = cos(angle);
-  roots_imag[index] = sin(angle);
-
-
-}
-
 __device__ char forwardFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 {
   //copy into second array
@@ -240,115 +224,13 @@ __global__ void inverseFFTCol(float *real_image, float *imag_image)
   imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
 }
 
-__global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
+__global__ void filter(float *real_image, float *imag_image)
 {
   int row = blockIdx.x;
   int col = threadIdx.x;
 
-  __shared__ float real[SIZE];
-  __shared__ float imag[SIZE];
-  __shared__ float roots_real_local[SIZE];
-  __shared__ float roots_imag_local[SIZE];
-
-  int offset = row * SIZE + col;
-
-  real[col] = real_image[offset];
-  imag[col] = imag_image[offset];
-  // roots_real_local[col] = roots_real[col];
-  // roots_imag_local[col] = roots_imag[col];
-  float angle = - 2 * PI * col / SIZE;
-  roots_real_local[col] = __cosf(angle);
-  roots_imag_local[col] = __sinf(angle);
-
-  __syncthreads();
-
-  // if(row == 0 && col == 0)
-  // {
-  //   printf("\n1st real row: \n");
-  //   for (int i = 0; i < SIZE; ++i)
-  //   {
-  //     printf("%f, ", real[i]);
-  //   }
-  //   printf("\n1st imag row: \n");
-  //   for (int i = 0; i < SIZE; ++i)
-  //   {
-  //     printf("%f, ", imag[i]);
-  //   }
-  // }
-
-  float real_val = 0.f;
-  float imag_val = 0.f;
-
-  for (int n = 0; n < SIZE; ++n)
-  {
-    int index = n * col % SIZE;
-    float root_real = roots_real_local[index];
-    float root_imag = roots_imag_local[index];
-
-    real_val += real[n]* root_real - imag[n]* root_imag;
-    imag_val += imag[n]* root_real + real[n]* root_imag;
-  }
-
-  real_image[offset] = real_val;
-  imag_image[offset] = imag_val;
-
-  // if(row == 0 && col == 0)
-  // {
-  //   printf("\n1st transform real: \n");
-  //   printf("%f, ", real_val);
-  //   printf("\n1st transform imag: \n");
-  //   printf("%f, ", imag_val);
-  // }
-
-}
-
-__global__ void forwardDFTCol(float *real_image, float *imag_image, int size)
-{
-  int col = blockIdx.x;
-  int row = threadIdx.x;
-  if (col >= SIZE / 8)
-  {
-    col += 3 * SIZE / 4;
-  }
-
-  __shared__ float real[SIZE];
-  __shared__ float imag[SIZE];
-  __shared__ float roots_real_local[SIZE];
-  __shared__ float roots_imag_local[SIZE];
-
-  real[row] = real_image[row * SIZE + col];
-  imag[row] = imag_image[row * SIZE + col];
-  float angle = - 2 * PI * row / SIZE;
-  roots_real_local[row] = __cosf(angle);
-  roots_imag_local[row] = __sinf(angle);
-
-  __syncthreads();
-
-  float real_val = 0.f;
-  float imag_val = 0.f;
-
-  for (int n = 0; n < SIZE; ++n)
-  {
-    int index = n * row % SIZE;
-
-    float root_real = roots_real_local[index];
-    float root_imag = roots_imag_local[index];
-
-    real_val += real[n]* root_real - imag[n]* root_imag;
-    imag_val += imag[n]* root_real + real[n]* root_imag;
-  }
-
-  real_image[row * SIZE + col] = real_val;
-  imag_image[row * SIZE + col] = imag_val;
-}
-
-__global__ void filter(float *real_image, float *imag_image, int size)
-{
-  int row = blockIdx.x;
-  int col = threadIdx.x;
-
-  int eighth = size / 8;
-  int seven_eighth = size - eighth;
+  int eighth = SIZE / 8;
+  int seven_eighth = SIZE - eighth;
 
   if ((row >= eighth && row < seven_eighth) || (col >= eighth && col < seven_eighth))
   {
@@ -357,82 +239,6 @@ __global__ void filter(float *real_image, float *imag_image, int size)
   }
 }
 
-__global__ void inverseDFTRow(float *real_image, float *imag_image, int size)
-{
-
-  int row = blockIdx.x;
-  if (row >= SIZE / 8)
-  {
-    row += 3 * SIZE / 4;
-  }
-  int col = threadIdx.x;
-
-  __shared__ float real[SIZE];
-  __shared__ float imag[SIZE];
-  __shared__ float roots_real_local[SIZE];
-  __shared__ float roots_imag_local[SIZE];
-
-  real[col] = real_image[row * SIZE + col];
-  imag[col] = imag_image[row * SIZE + col];
-  float angle = - 2 * PI * col / SIZE;
-  roots_real_local[col] = __cosf(angle);
-  roots_imag_local[col] = __sinf(angle);
-
-  __syncthreads();
-
-  float real_val = 0.f;
-  float imag_val = 0.f;
-
-  for (int n = 0; n < SIZE; ++n)
-  {
-    int index = n * col % SIZE;
-
-    float root_real = roots_real_local[index];
-    float root_imag = -roots_imag_local[index];
-
-    real_val += real[n]* root_real - imag[n]* root_imag;
-    imag_val += imag[n]* root_real + real[n]* root_imag;
-  }
-
-  real_image[row * SIZE + col] = real_val / size;
-  imag_image[row * SIZE + col] = imag_val / size;
-}
-
-__global__ void inverseDFTCol(float *real_image, float *imag_image, int size)
-{
-  int col = blockIdx.x;
-  int row = threadIdx.x;
-
-  __shared__ float real[SIZE];
-  __shared__ float imag[SIZE];
-  __shared__ float roots_real_local[SIZE];
-  __shared__ float roots_imag_local[SIZE];
-
-  real[row] = real_image[row * SIZE + col];
-  imag[row] = imag_image[row * SIZE + col];
-  float angle = - 2 * PI * row / SIZE;
-  roots_real_local[row] = __cosf(angle);
-  roots_imag_local[row] = __sinf(angle);
-
-  __syncthreads();
-
-  float real_val = 0.f;
-  float imag_val = 0.f;
-
-  for (int n = 0; n < SIZE; ++n)
-  {
-    int index = n * row % SIZE;
-
-    float root_real = roots_real_local[index];
-    float root_imag = -roots_imag_local[index];
-
-    real_val += real[n]* root_real - imag[n]* root_imag;
-    imag_val += imag[n]* root_real + real[n]* root_imag;
-  }
-
-  real_image[row * SIZE + col] = real_val / size;
-  imag_image[row * SIZE + col] = imag_val / size;
-}
 
 //----------------------------------------------------------------
 // END ADD KERNEL DEFINTIONS
@@ -452,7 +258,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   float transferDown = 0, transferUp = 0, execution = 0;
   cudaEvent_t start,stop;
 
-  float fftr = 0.f, fftc = 0.f, ifftr = 0.f, ifftc = 0.f, filter_time = 0.f, roots = 0.f;
+  float fftr = 0.f, fftc = 0.f, ifftr = 0.f, ifftc = 0.f, filter_time = 0.f;
   cudaEvent_t start_bis, stop_bis;
 
   CUDA_ERROR_CHECK(cudaEventCreate(&start));
@@ -512,13 +318,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // {
   //   printf("%f, ", imag_image[i]);
   // }
-  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
-
-  populateRoots<<<1, SIZE / 2, 0, filterStream>>>();
-
-  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
-  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
-  CUDA_ERROR_CHECK(cudaEventElapsedTime(&roots,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
@@ -551,7 +350,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&fftc,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
-  filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&filter_time,start_bis,stop_bis));
@@ -610,7 +409,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   float totalTime = transferDown + execution + transferUp;
   printf("  Total CUDA Execution Time: %f ms\n\n", totalTime);
 
-  printf("  Roots Time: %f ms\n\n", roots);
   printf("  Row DFT Time: %f ms\n\n", fftr);
   printf("  Col DFT Time: %f ms\n\n", fftc);
   printf("  Filter Time: %f ms\n\n", filter_time);
