@@ -91,7 +91,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
     float r2 = real[curr][col];
     float i1 = imag[curr][temp];
     float i2 = imag[curr][col];
-    temp = ((col - span) << 1) - pos_in_unit + unit_size;
+    temp = ((col - span) << 1) + 1;
     real[next][temp] = r1 - r2;
     imag[next][temp] = i1 - i2;
   }
