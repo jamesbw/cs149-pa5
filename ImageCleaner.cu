@@ -324,7 +324,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   {
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * matSize/ASYNC_BLOCKS,real_image + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * matSize/ASYNC_BLOCKS,imag_image + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
-    forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real, device_imag);
+    forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * matSize/ASYNC_BLOCKS, device_imag + i * matSize/ASYNC_BLOCKS);
   }
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
@@ -374,7 +374,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   for (int i = 0; i < ASYNC_BLOCKS; ++i)
   {
-    inverseFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real, device_imag);
+    inverseFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * matSize/ASYNC_BLOCKS, device_imag + i * matSize/ASYNC_BLOCKS);
     CUDA_ERROR_CHECK(cudaMemcpyAsync(real_image + i * matSize/ASYNC_BLOCKS,device_real + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
     CUDA_ERROR_CHECK(cudaMemcpyAsync(imag_image + i * matSize/ASYNC_BLOCKS,device_imag + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
   }
@@ -412,6 +412,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaStreamSynchronize(filterStream));
   // Destroy the stream
   CUDA_ERROR_CHECK(cudaStreamDestroy(filterStream));
+  for (int i = 0; i < ASYNC_BLOCKS; ++i)
+    cudaStreamDestroy(stream[i]);
   // Destroy the events
   CUDA_ERROR_CHECK(cudaEventDestroy(start));
   CUDA_ERROR_CHECK(cudaEventDestroy(stop));
