@@ -322,10 +322,10 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   }
   for (int i = 0; i < ASYNC_BLOCKS; ++i)
   {
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * matSize/ASYNC_BLOCKS,real_image + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * matSize/ASYNC_BLOCKS,imag_image + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
+    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS,real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
+    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     printf("Before fft row\n");
-    forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * matSize/ASYNC_BLOCKS, device_imag + i * matSize/ASYNC_BLOCKS);
+    forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
   }
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
@@ -379,9 +379,9 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   for (int i = 0; i < ASYNC_BLOCKS; ++i)
   {
-    inverseFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * matSize/ASYNC_BLOCKS, device_imag + i * matSize/ASYNC_BLOCKS);
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(real_image + i * matSize/ASYNC_BLOCKS,device_real + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(imag_image + i * matSize/ASYNC_BLOCKS,device_imag + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
+    inverseFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
+    CUDA_ERROR_CHECK(cudaMemcpyAsync(real_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_real + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
+    CUDA_ERROR_CHECK(cudaMemcpyAsync(imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
   }
   printf("Past ifft row\n");
 
