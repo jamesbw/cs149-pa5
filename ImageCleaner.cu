@@ -75,6 +75,11 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
     int twiddle_index = pos_in_unit * SIZE / (2 * unit_size);
     float twiddle_real = roots_real_local[twiddle_index];
     float twiddle_imag = roots_imag_local[twiddle_index];
+
+    if (row == 0 && col ==1)
+    {
+      printf("Position: %d, pos_in_unit: %d, unit_size: %d, twiddle_index: %d\n", pos, pos_in_unit, unit_size, twiddle_index);
+    }
     
     if (pos < span)
     {
