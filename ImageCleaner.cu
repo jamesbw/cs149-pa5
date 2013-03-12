@@ -36,7 +36,7 @@ __global__ void populateRoots()
 
 }
 
-__device__ char fft(int pos, float (*real)[SIZE], float (*imag)[SIZE])
+__device__ char forwardFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 {
   //copy into second array
 
@@ -46,6 +46,67 @@ __device__ char fft(int pos, float (*real)[SIZE], float (*imag)[SIZE])
   if (pos < SIZE / 2)
   {
     float angle = - TWO_PI * pos / SIZE;
+    roots_real_local[pos] = __cosf(angle);
+    roots_imag_local[pos] = __sinf(angle);
+  }
+
+
+  __syncthreads();
+
+  char curr = 0;
+  char next = 1;
+
+  int span = SIZE >> 1;
+  int temp;
+
+  for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
+  {
+    int pos_in_unit = pos % unit_size;
+    temp = pos_in_unit * (SIZE >> 1) / unit_size; // twiddle index
+    float twiddle_real = roots_real_local[temp];
+    float twiddle_imag = roots_imag_local[temp];
+
+    if (pos < span)
+    {
+      //x1 = x1 + twiddle * x2
+      temp = pos + span;
+      float r1 = real[curr][pos];
+      float r2 = real[curr][temp];
+      float i1 = imag[curr][pos];
+      float i2 = imag[curr][temp];
+      temp = (pos << 1) - pos_in_unit;
+      real[next][temp] = r1 + (twiddle_real * r2 - twiddle_imag * i2);
+      imag[next][temp] = i1 + (twiddle_real * i2 + twiddle_imag * r2);
+    }
+    else
+    {
+      // x2 = x1 - twiddle *x2
+      temp = pos - span;
+      float r1 = real[curr][temp];
+      float r2 = real[curr][pos];
+      float i1 = imag[curr][temp];
+      float i2 = imag[curr][pos];
+      temp = ((pos - span) << 1) - pos_in_unit + unit_size;
+      real[next][temp] = r1 - (twiddle_real * r2 - twiddle_imag * i2);
+      imag[next][temp] = i1 - (twiddle_real * i2 + twiddle_imag * r2);
+    }
+    __syncthreads();
+    next = curr;
+    curr = 1 - curr;
+  }
+  return curr;
+}
+
+__device__ char inverseFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
+{
+  //copy into second array
+
+  __shared__ float roots_real_local[SIZE/2];
+  __shared__ float roots_imag_local[SIZE/2];
+
+  if (pos < SIZE / 2)
+  {
+    float angle = TWO_PI * pos / SIZE;
     roots_real_local[pos] = __cosf(angle);
     roots_imag_local[pos] = __sinf(angle);
   }
@@ -112,7 +173,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = fft(col, real, imag);
+  char curr = forwardFFT(col, real, imag);
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
@@ -133,7 +194,7 @@ __global__ void inverseFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = fft(col, real, imag);
+  char curr = inverseFFT(col, real, imag);
 
   real_image[offset] = real[curr][col] / SIZE;
   imag_image[offset] = imag[curr][col] / SIZE;
@@ -153,7 +214,7 @@ __global__ void forwardFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  char curr = fft(row, real, imag);
+  char curr = forwardFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row];
   imag_image[row * SIZE + col] = imag[curr][row];
@@ -173,7 +234,7 @@ __global__ void inverseFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  char curr = fft(row, real, imag);
+  char curr = inverseFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row] / SIZE;
   imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
