@@ -71,35 +71,35 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
   int temp;
 
   // // hard coded unit_size = 1
-  // if (col < span)
-  // {
-  //   //x1 = x1 + twiddle * x2
-  //   temp = col + span;
-  //   float r1 = real[curr][col];
-  //   float r2 = real[curr][temp];
-  //   float i1 = imag[curr][col];
-  //   float i2 = imag[curr][temp];
-  //   temp = col << 1;
-  //   real[next][temp] = r1 + r2;
-  //   imag[next][temp] = i1 + i2;
-  // }
-  // else
-  // {
-  //   // x2 = x1 - twiddle *x2
-  //   temp = col - span;
-  //   float r1 = real[curr][temp];
-  //   float r2 = real[curr][col];
-  //   float i1 = imag[curr][temp];
-  //   float i2 = imag[curr][col];
-  //   temp = ((col - span) << 1) + 1;
-  //   real[next][temp] = r1 - r2;
-  //   imag[next][temp] = i1 - i2;
-  // }
-  // __syncthreads();
-  // next = curr;
-  // curr = 1 - curr;
+  if (col < span)
+  {
+    //x1 = x1 + twiddle * x2
+    temp = col + span;
+    float r1 = real[curr][col];
+    float r2 = real[curr][temp];
+    float i1 = imag[curr][col];
+    float i2 = imag[curr][temp];
+    temp = col << 1;
+    real[next][temp] = r1 + r2;
+    imag[next][temp] = i1 + i2;
+  }
+  else
+  {
+    // x2 = x1 - twiddle *x2
+    temp = col - span;
+    float r1 = real[curr][temp];
+    float r2 = real[curr][col];
+    float i1 = imag[curr][temp];
+    float i2 = imag[curr][col];
+    temp = ((col - span) << 1) + 1;
+    real[next][temp] = r1 - r2;
+    imag[next][temp] = i1 - i2;
+  }
+  __syncthreads();
+  next = curr;
+  curr = 1 - curr;
 
-  for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
+  for (int unit_size = 2; unit_size < SIZE ; unit_size <<= 1)
   {
     int pos_in_unit = col % unit_size;
     temp = pos_in_unit * (SIZE >> 1) / unit_size; // twiddle index
