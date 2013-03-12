@@ -8,7 +8,8 @@
 #endif
 
 #define SIZE SIZEX
-#define PI  3.14159256f
+#define PI     3.14159256f
+#define TWO_PI 6.28318530f
 
 //----------------------------------------------------------------
 // TODO:  CREATE NEW KERNELS HERE.  YOU CAN PLACE YOUR CALLS TO
@@ -43,8 +44,8 @@ __global__ void populateRoots()
 
 __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 {
-  int row = blockIdx.x;
-  int col = threadIdx.x;
+  short row = blockIdx.x;
+  short col = threadIdx.x;
 
   __shared__ float real[2][SIZE];
   __shared__ float imag[2][SIZE];
@@ -52,88 +53,58 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
   __shared__ float roots_imag_local[SIZE];
 
   //copy into second array
-  int curr = 0;
-  int next = 1;
+  char curr = 0;
+  char next = 1;
 
-  int offset = row * SIZE + col;
+  short offset = row * SIZE + col;
 
   real[curr][col] = real_image[offset];
   imag[curr][col] = imag_image[offset];
-  float angle = - 2 * PI * col / SIZE;
+  float angle = - TWO_PI * col / SIZE;
   roots_real_local[col] = __cosf(angle);
   roots_imag_local[col] = __sinf(angle);
 
   __syncthreads();
 
 
-  int span = SIZE / 2;
+  short span = SIZE << 1;
+  short temp;
 
-  for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
+  for (short unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
   {
-    int pos_in_unit = threadIdx.x % unit_size;
-    int pos = threadIdx.x;
-    int twiddle_index = pos_in_unit * SIZE / (2 * unit_size);
-    float twiddle_real = roots_real_local[twiddle_index];
-    float twiddle_imag = roots_imag_local[twiddle_index];
+    short pos_in_unit = col % unit_size;
+    temp = pos_in_unit * (SIZE >> 1) / unit_size; // twiddle index
+    float twiddle_real = roots_real_local[temp];
+    float twiddle_imag = roots_imag_local[temp];
 
-    if (row == 0 && col == SIZE - 1)
-    {
-      printf("Position: %d, pos_in_unit: %d, unit_size: %d, twiddle_index: %d\n", pos, pos_in_unit, unit_size, twiddle_index);
-    }
-    
-    if (pos < span)
+    if (col < span)
     {
       //x1 = x1 + twiddle * x2
-      int new_pos = 2 * pos - pos_in_unit;
+      temp = col + span;
       float r1 = real[curr][col];
-      float r2 = real[curr][col+span];
+      float r2 = real[curr][temp];
       float i1 = imag[curr][col];
-      float i2 = imag[curr][col+span];
-      real[next][new_pos] = r1 + (twiddle_real * r2 - twiddle_imag * i2);
-      imag[next][new_pos] = i1 + (twiddle_real * i2 + twiddle_imag * r2);
+      float i2 = imag[curr][temp];
+      temp = 2 * col - pos_in_unit;
+      real[next][temp] = r1 + (twiddle_real * r2 - twiddle_imag * i2);
+      imag[next][temp] = i1 + (twiddle_real * i2 + twiddle_imag * r2);
     }
     else
     {
       // x2 = x1 - twiddle *x2
-      int new_pos = (pos - span) * 2 - pos_in_unit + unit_size;
-      float r1 = real[curr][col - span];
+      temp = col - span;
+      float r1 = real[curr][temp];
       float r2 = real[curr][col];
-      float i1 = imag[curr][col - span];
+      float i1 = imag[curr][temp];
       float i2 = imag[curr][col];
-      real[next][new_pos] = r1 - (twiddle_real * r2 - twiddle_imag * i2);
-      imag[next][new_pos] = i1 - (twiddle_real * i2 + twiddle_imag * r2);
+      temp = ((col - span) << 1) - pos_in_unit + unit_size;
+      real[next][temp] = r1 - (twiddle_real * r2 - twiddle_imag * i2);
+      imag[next][temp] = i1 - (twiddle_real * i2 + twiddle_imag * r2);
     }
     __syncthreads();
     next = curr;
     curr = 1 - curr;
   }
-
-  // for (int span = SIZE / 2, num_units = 1; span ; span >>= 1, num_units <<= 1)
-  // {
-  //   int pos = col % (2 * span);
-  //   if (pos < span)
-  //   {
-  //     //x1 = x1 + x2
-  //     real[next][col] = real[curr][col] + real[curr][col+span];
-  //     imag[next][col] = imag[curr][col] + imag[curr][col+span];
-  //   }
-  //   else
-  //   {
-  //     // x2 = twiddle * (x1 - x2)
-  //     int twiddle_index = (pos % span) * num_units;
-  //     float twiddle_real = roots_real_local[twiddle_index];
-  //     float twiddle_imag = roots_imag_local[twiddle_index];
-  //     float r1 = real[curr][col - span];
-  //     float r2 = real[curr][col];
-  //     float i1 = imag[curr][col - span];
-  //     float i2 = imag[curr][col];
-  //     real[next][col] = twiddle_real * (r1 - r2) - twiddle_imag * (i1 - i2);
-  //     imag[next][col] = twiddle_imag * (r1 - r2) + twiddle_real * (i1 - i2);
-  //   }
-  //   __syncthreads();
-  //   next = curr;
-  //   curr = 1 - curr;
-  // }
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
@@ -401,16 +372,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //
   // Also note that you pass the pointers to the device memory to the kernel call
 
-  printf("\n1st row real\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row imag\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row real\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row imag\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
   populateRoots<<<1, SIZE / 2, 0, filterStream>>>();
@@ -424,19 +395,19 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
 
-  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
-  printf("\n1st row tranform real\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row tranform imag\n");
-  for (int i = 0; i < size; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row tranform real\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row tranform imag\n");
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
 
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
