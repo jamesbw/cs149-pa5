@@ -97,7 +97,7 @@ __device__ char fft(int pos, float (*real)[SIZE], float (*imag)[SIZE])
   return curr;
 }
 
-__global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
+__global__ void forwardFFTRow(float *real_image, float *imag_image)
 {
   int row = blockIdx.x;
   int col = threadIdx.x;
@@ -116,6 +116,26 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
+}
+
+__global__ void forwardFFTCol(float *real_image, float *imag_image)
+{
+  int col = blockIdx.x;
+  int row = threadIdx.x;
+  if (col >= SIZE / 8)
+  {
+    col += 3 * SIZE / 4;
+  }
+  __shared__ float real[2][SIZE];
+  __shared__ float imag[2][SIZE];
+
+  real[0][row] = real_image[row * SIZE + col];
+  imag[0][row] = imag_image[row * SIZE + col];
+
+  char curr = fft(row, real, imag);
+
+  real_image[row * SIZE + col] = real[curr][row];
+  imag_image[row * SIZE + col] = imag[curr][row];
 }
 
 __global__ void forwardDFTRow(float *real_image, float *imag_image, int size)
