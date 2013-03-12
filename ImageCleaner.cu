@@ -373,16 +373,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftc,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
-  for (int i = 0; i < ASYNC_BLOCKS; ++i)
-  {
-    inverseFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(real_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_real + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
-  }
+  // for (int i = 0; i < ASYNC_BLOCKS; ++i)
+  // {
+  //   inverseFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
+  //   CUDA_ERROR_CHECK(cudaMemcpyAsync(real_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_real + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
+  //   CUDA_ERROR_CHECK(cudaMemcpyAsync(imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
+  // }
 
-  CUDA_ERROR_CHECK(cudaDeviceSynchronize());
+  // CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 
-  // inverseFFTRow<<<SIZE , SIZE, 0, filterStream>>>(device_real, device_imag);
+  inverseFFTRow<<<SIZE , SIZE, 0, filterStream>>>(device_real, device_imag);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftr,start_bis,stop_bis));
@@ -401,8 +401,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventRecord(start,filterStream));
 
   // Here is where we copy matrices back from the device 
-  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
   // Finish timing for transfer up
   CUDA_ERROR_CHECK(cudaEventRecord(stop,filterStream));
