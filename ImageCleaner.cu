@@ -324,6 +324,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   {
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * matSize/ASYNC_BLOCKS,real_image + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * matSize/ASYNC_BLOCKS,imag_image + i * matSize/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
+    printf("Before fft row\n");
     forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * matSize/ASYNC_BLOCKS, device_imag + i * matSize/ASYNC_BLOCKS);
   }
 
