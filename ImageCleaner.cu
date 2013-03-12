@@ -44,8 +44,8 @@ __global__ void populateRoots()
 
 __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
 {
-  short row = blockIdx.x;
-  short col = threadIdx.x;
+  int row = blockIdx.x;
+  int col = threadIdx.x;
 
   __shared__ float real[2][SIZE];
   __shared__ float imag[2][SIZE];
@@ -56,7 +56,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
   char curr = 0;
   char next = 1;
 
-  short offset = row * SIZE + col;
+  int offset = row * SIZE + col;
 
   real[curr][col] = real_image[offset];
   imag[curr][col] = imag_image[offset];
@@ -67,41 +67,41 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
   __syncthreads();
 
 
-  short span = SIZE >> 1;
-  short temp;
+  int span = SIZE >> 1;
+  int temp;
 
-  // hard coded unit_size = 1
-  if (col < span)
-  {
-    //x1 = x1 + twiddle * x2
-    temp = col + span;
-    float r1 = real[curr][col];
-    float r2 = real[curr][temp];
-    float i1 = imag[curr][col];
-    float i2 = imag[curr][temp];
-    temp = col << 1;
-    real[next][temp] = r1 + r2;
-    imag[next][temp] = i1 + i2;
-  }
-  else
-  {
-    // x2 = x1 - twiddle *x2
-    temp = col - span;
-    float r1 = real[curr][temp];
-    float r2 = real[curr][col];
-    float i1 = imag[curr][temp];
-    float i2 = imag[curr][col];
-    temp = ((col - span) << 1) + 1;
-    real[next][temp] = r1 - r2;
-    imag[next][temp] = i1 - i2;
-  }
-  __syncthreads();
-  next = curr;
-  curr = 1 - curr;
+  // // hard coded unit_size = 1
+  // if (col < span)
+  // {
+  //   //x1 = x1 + twiddle * x2
+  //   temp = col + span;
+  //   float r1 = real[curr][col];
+  //   float r2 = real[curr][temp];
+  //   float i1 = imag[curr][col];
+  //   float i2 = imag[curr][temp];
+  //   temp = col << 1;
+  //   real[next][temp] = r1 + r2;
+  //   imag[next][temp] = i1 + i2;
+  // }
+  // else
+  // {
+  //   // x2 = x1 - twiddle *x2
+  //   temp = col - span;
+  //   float r1 = real[curr][temp];
+  //   float r2 = real[curr][col];
+  //   float i1 = imag[curr][temp];
+  //   float i2 = imag[curr][col];
+  //   temp = ((col - span) << 1) + 1;
+  //   real[next][temp] = r1 - r2;
+  //   imag[next][temp] = i1 - i2;
+  // }
+  // __syncthreads();
+  // next = curr;
+  // curr = 1 - curr;
 
-  for (short unit_size = 2; unit_size < SIZE ; unit_size <<= 1)
+  for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
   {
-    short pos_in_unit = col % unit_size;
+    int pos_in_unit = col % unit_size;
     temp = pos_in_unit * (SIZE >> 1) / unit_size; // twiddle index
     float twiddle_real = roots_real_local[temp];
     float twiddle_imag = roots_imag_local[temp];
