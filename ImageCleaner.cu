@@ -80,8 +80,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
     float i1 = imag[curr][col];
     float i2 = imag[curr][temp];
     temp = col << 1;
-    real[next][temp] = r1 + twiddle_real * r2;
-    imag[next][temp] = i1 + twiddle_real * i2;
+    real[next][temp] = r1 + r2;
+    imag[next][temp] = i1 + i2;
   }
   else
   {
@@ -92,8 +92,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image, int size)
     float i1 = imag[curr][temp];
     float i2 = imag[curr][col];
     temp = ((col - span) << 1) - pos_in_unit + unit_size;
-    real[next][temp] = r1 - twiddle_real * r2;
-    imag[next][temp] = i1 - twiddle_real * i2;
+    real[next][temp] = r1 - r2;
+    imag[next][temp] = i1 - i2;
   }
   __syncthreads();
   next = curr;
