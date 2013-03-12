@@ -43,9 +43,13 @@ __device__ char fft(int pos, float (*real)[SIZE], float (*imag)[SIZE])
   __shared__ float roots_real_local[SIZE/2];
   __shared__ float roots_imag_local[SIZE/2];
 
-  float angle = - TWO_PI * pos / SIZE;
-  roots_real_local[pos] = __cosf(angle);
-  roots_imag_local[pos] = __sinf(angle);
+  if (pos < SIZE / 2)
+  {
+    float angle = - TWO_PI * pos / SIZE;
+    roots_real_local[pos] = __cosf(angle);
+    roots_imag_local[pos] = __sinf(angle);
+  }
+
 
   __syncthreads();
 
