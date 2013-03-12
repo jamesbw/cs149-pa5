@@ -421,7 +421,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
 
-  forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag, size);
+  forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
 
   // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
   // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
