@@ -302,7 +302,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //
   // Also note that you pass the pointers to the device memory to the kernel call
 
-  float *pinned_real_image, pinned_imag_image;
+  float *pinned_real_image, *pinned_imag_image;
   CUDA_ERROR_CHECK(cudaMallocHost((void **) &pinned_real_image, matSize));
   CUDA_ERROR_CHECK(cudaMallocHost((void **) &pinned_imag_image, matSize));
 
