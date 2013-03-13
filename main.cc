@@ -126,8 +126,8 @@ int main(int argc, char **argv)
   // Clean up the memory
   // delete [] real_image;
   // delete [] imag_image;
-  CUDA_ERROR_CHECK(cudaMallocHost(real_image));
-  CUDA_ERROR_CHECK(cudaMallocHost(imag_image));
+  CUDA_ERROR_CHECK(cudaMallocFree(real_image));
+  CUDA_ERROR_CHECK(cudaMallocFree(imag_image));
   delete [] real_image_ref;
   delete [] imag_image_ref; 
 
