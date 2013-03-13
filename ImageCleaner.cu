@@ -20,7 +20,7 @@
 //----------------------------------------------------------------
 
 
-__device__ char forwardFFT_radix4(int pos, float *real, float *imag)
+__device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 {
 
   __shared__ float roots_real_local[SIZE];
