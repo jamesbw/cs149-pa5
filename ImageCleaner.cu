@@ -252,7 +252,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   float transferDown = 0, transferUp = 0, execution = 0;
   cudaEvent_t start,stop;
 
-  float fftr = 0.f, fftc = 0.f, ifftr = 0.f, ifftc = 0.f, filter_time = 0.f;
+  float fftr = 0.f, fftc = 0.f, ifftr = 0.f, ifftc = 0.f, filter_time = 0.f, pinning = 0.f;
   cudaEvent_t start_bis, stop_bis;
 
   CUDA_ERROR_CHECK(cudaEventCreate(&start));
@@ -302,9 +302,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //
   // Also note that you pass the pointers to the device memory to the kernel call
 
+  CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   float *pinned_real_image, *pinned_imag_image;
   CUDA_ERROR_CHECK(cudaMallocHost((void **) &pinned_real_image, matSize));
   CUDA_ERROR_CHECK(cudaMallocHost((void **) &pinned_imag_image, matSize));
+  memcpy(pinned_real_image, real_image, matSize);
+  memcpy(pinned_imag_image, imag_image, matSize);
+
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&pinning,start_bis,stop_bis));
 
   // printf("\n1st row real\n");
   // for (int i = 0; i < size; ++i)
@@ -329,8 +336,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   for (int i = 0; i < ASYNC_BLOCKS; ++i)
   {
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS,real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
+    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS,pinned_real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
+    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,pinned_imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
   }
 
@@ -440,6 +447,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   float totalTime = transferDown + execution + transferUp;
   printf("  Total CUDA Execution Time: %f ms\n\n", totalTime);
 
+  printf("  Pinning Time: %f ms\n\n", pinning);
   printf("  Row DFT Time: %f ms\n\n", fftr);
   printf("  Col DFT Time: %f ms\n\n", fftc);
   printf("  Filter Time: %f ms\n\n", filter_time);
