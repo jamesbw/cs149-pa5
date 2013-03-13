@@ -38,7 +38,7 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
   char next = 1;
 
   int span = SIZE >> 2;
-  int temp;
+  // int temp;
 
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 2)
   {
@@ -423,12 +423,12 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
 
   printf("\n1st row real\n");
-  for (int i = 0; i < size; ++i)
+  for (int i = 0; i < SIZE; ++i)
   {
     printf("%f, ", real_image[i]);
   }
   printf("\n1st row imag\n");
-  for (int i = 0; i < size; ++i)
+  for (int i = 0; i < SIZE; ++i)
   {
     printf("%f, ", imag_image[i]);
   }
@@ -464,12 +464,12 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
   printf("\n1st row tranform real\n");
-  for (int i = 0; i < size; ++i)
+  for (int i = 0; i < SIZE; ++i)
   {
     printf("%f, ", real_image[i]);
   }
   printf("\n1st row tranform imag\n");
-  for (int i = 0; i < size; ++i)
+  for (int i = 0; i < SIZE; ++i)
   {
     printf("%f, ", imag_image[i]);
   }
