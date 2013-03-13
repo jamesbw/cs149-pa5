@@ -309,9 +309,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // memcpy(pinned_real_image, real_image, matSize);
   // memcpy(pinned_imag_image, imag_image, matSize);
 
-  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
-  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
-  CUDA_ERROR_CHECK(cudaEventElapsedTime(&pinning,start_bis,stop_bis));
 
   // printf("\n1st row real\n");
   // for (int i = 0; i < size; ++i)
@@ -331,6 +328,10 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   {
     cudaStreamCreate(&stream[i]);
   }
+  
+  CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
+  CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
+  CUDA_ERROR_CHECK(cudaEventElapsedTime(&pinning,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
