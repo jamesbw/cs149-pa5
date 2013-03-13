@@ -124,8 +124,10 @@ int main(int argc, char **argv)
     write_jpeg(outFileName.c_str(), real_image, imag_image, size_x, size_y); 
   }
   // Clean up the memory
-  delete [] real_image;
-  delete [] imag_image;
+  // delete [] real_image;
+  // delete [] imag_image;
+  CUDA_ERROR_CHECK(cudaMallocHost(real_image));
+  CUDA_ERROR_CHECK(cudaMallocHost(imag_image));
   delete [] real_image_ref;
   delete [] imag_image_ref; 
 
