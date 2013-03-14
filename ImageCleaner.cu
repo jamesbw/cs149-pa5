@@ -118,15 +118,17 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
       temp = threadIdx.x - (SIZE >> 2); // index of x1
       int ind3 = threadIdx.x + (SIZE >> 2);
       int ind4 = threadIdx.x + (SIZE >> 1); 
-      float r2 = real[curr][threadIdx.x];
+      float r1 = real[curr][temp];
+      // float r2 = real[curr][threadIdx.x];
       float r3 = real[curr][ind3];
       float r4 = real[curr][ind4];
-      float i2 = imag[curr][threadIdx.x];
+      float i1 = imag[curr][temp];
+      // float i2 = imag[curr][threadIdx.x];
       float i3 = imag[curr][ind3];
       float i4 = imag[curr][ind4];
       temp = ((threadIdx.x - pos_in_unit - (SIZE >> 2)) << 2) + (unit_size + pos_in_unit) ; //new index of x2
-      real[next][temp] = real[curr][temp] + (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
-      imag[next][temp] = imag[curr][temp] - (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
+      real[next][temp] = r1 + (twiddle1k_real * imag[curr][threadIdx.x] + twiddle1k_imag * real[curr][threadIdx.x];) - (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
+      imag[next][temp] = i1 - (twiddle1k_real * real[curr][threadIdx.x]; - twiddle1k_imag * imag[curr][threadIdx.x]) - (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
 
     }
     else if (threadIdx.x < (SIZE >> 1) + (SIZE >> 2))
@@ -154,15 +156,17 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
       temp = threadIdx.x - (SIZE >> 1); // index of x1
       int ind2 = threadIdx.x - (SIZE >> 2);
       int ind4 = threadIdx.x + (SIZE >> 2); 
+      float r1 = real[curr][temp];
       float r2 = real[curr][ind2];
-      float r3 = real[curr][threadIdx.x];
+      // float r3 = real[curr][threadIdx.x];
       float r4 = real[curr][ind4];
+      float i1 = imag[curr][temp];
       float i2 = imag[curr][ind2];
-      float i3 = imag[curr][threadIdx.x];
+      // float i3 = imag[curr][threadIdx.x];
       float i4 = imag[curr][ind4];
       temp = ((threadIdx.x - pos_in_unit - (SIZE >> 1)) << 2) + ((unit_size >> 1) + pos_in_unit) ; //new index of x3
-      real[next][temp] = real[curr][temp] - (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
-      imag[next][temp] = imag[curr][temp] - (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
+      real[next][temp] = r1 - (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * real[curr][threadIdx.x] - twiddle2k_imag * imag[curr][threadIdx.x]) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
+      imag[next][temp] = i1 - (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * imag[curr][threadIdx.x] + twiddle2k_imag * real[curr][threadIdx.x]) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
     }
     else
     {
@@ -189,15 +193,17 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
       temp = threadIdx.x - 3 * (SIZE >> 2); // index of x1
       int ind2 = threadIdx.x - (SIZE >> 1);
       int ind3 = threadIdx.x - (SIZE >> 2); 
+      float r1 = real[curr][temp];
       float r2 = real[curr][ind2];
       float r3 = real[curr][ind3];
-      float r4 = real[curr][threadIdx.x];
+      // float r4 = real[curr][threadIdx.x];
+      float i1 = imag[curr][temp];
       float i2 = imag[curr][ind2];
       float i3 = imag[curr][ind3];
-      float i4 = imag[curr][threadIdx.x];
+      // float i4 = imag[curr][threadIdx.x];
       temp = ((threadIdx.x - pos_in_unit - 3 * (SIZE >> 2)) << 2) + (3 * unit_size + pos_in_unit) ; //new index of x4
-      real[next][temp] = real[curr][temp] - (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * i4 + twiddle3k_imag * r4);
-      imag[next][temp] = imag[curr][temp] + (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
+      real[next][temp] = real[curr][temp] - (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * imag[curr][threadIdx.x] + twiddle3k_imag * real[curr][threadIdx.x]);
+      imag[next][temp] = imag[curr][temp] + (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * real[curr][threadIdx.x] - twiddle3k_imag * imag[curr][threadIdx.x]);
 
     }
   __syncthreads();
