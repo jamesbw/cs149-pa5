@@ -43,21 +43,21 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 2)
   {
     int pos_in_unit = pos % unit_size;
-    int twiddle1k_index = pos_in_unit * span / unit_size; // twiddle index
+    int twiddle1k_index = pos_in_unit * (SIZE >> 2) / unit_size; // twiddle index
     float twiddle1k_real = roots_real_local[twiddle1k_index];
     float twiddle1k_imag = roots_imag_local[twiddle1k_index];
-    float twiddle2k_real = roots_real_local[2*twiddle1k_index];
-    float twiddle2k_imag = roots_imag_local[2*twiddle1k_index];
+    float twiddle2k_real = roots_real_local[twiddle1k_index >> 1];
+    float twiddle2k_imag = roots_imag_local[twiddle1k_index >> 1];
     float twiddle3k_real = roots_real_local[3*twiddle1k_index];
     float twiddle3k_imag = roots_imag_local[3*twiddle1k_index];
 
 
-    if (pos < SIZE / 4)
+    if (pos < SIZE >> 2)
     {
       //x1 = x1 + twiddle1k * x2 + twiddle2k * x3 + twiddle3k * x4
-      int ind2 = pos + span; // index of x2
-      int ind3 = ind2 + span;
-      int ind4 = ind3 + span; 
+      int ind2 = pos + (SIZE >> 2); // index of x2
+      int ind3 = ind2 + (SIZE >> 2);
+      int ind4 = ind3 + (SIZE >> 2); 
       float r1 = real[curr][pos];
       float r2 = real[curr][ind2];
       float r3 = real[curr][ind3];
@@ -66,16 +66,16 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][ind2];
       float i3 = imag[curr][ind3];
       float i4 = imag[curr][ind4];
-      int new_pos = (pos - pos_in_unit) * 4 + pos_in_unit; //new index of x1
+      int new_pos = (pos - pos_in_unit) << 2 + pos_in_unit; //new index of x1
       real[next][new_pos] = r1 + (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
       imag[next][new_pos] = i1 + (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * i4 + twiddle3k_imag * r4);
     }
-    else if (pos < SIZE / 2)
+    else if (pos < SIZE >> 1)
     {
       //x2 = x1 - j*twiddle1k * x2 - twiddle2k * x3 + j twiddle3k * x4
-      int ind1 = pos - span; // index of x1
-      int ind3 = pos + span;
-      int ind4 = pos + 2 * span; 
+      int ind1 = pos - (SIZE >> 2); // index of x1
+      int ind3 = pos + (SIZE >> 2);
+      int ind4 = pos + (SIZE >> 1); 
       float r1 = real[curr][ind1];
       float r2 = real[curr][pos];
       float r3 = real[curr][ind3];
@@ -84,17 +84,17 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][pos];
       float i3 = imag[curr][ind3];
       float i4 = imag[curr][ind4];
-      int new_pos = (pos - pos_in_unit - span) * 4 + (unit_size + pos_in_unit) ; //new index of x2
+      int new_pos = (pos - pos_in_unit - (SIZE >> 2)) * 4 + (unit_size + pos_in_unit) ; //new index of x2
       real[next][new_pos] = r1 + (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
       imag[next][new_pos] = i1 - (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
 
     }
-    else if (pos < 3 * SIZE / 4)
+    else if (pos < (SIZE >> 1) + (SIZE >> 2))
     {
       //x3 = x1 - twiddle1k * x2 + twiddle2k * x3 - twiddle3k * x4
-      int ind1 = pos - 2* span; // index of x1
-      int ind2 = pos - span;
-      int ind4 = pos + span; 
+      int ind1 = pos - (SIZE >> 1); // index of x1
+      int ind2 = pos - (SIZE >> 2);
+      int ind4 = pos + (SIZE >> 2); 
       float r1 = real[curr][ind1];
       float r2 = real[curr][ind2];
       float r3 = real[curr][pos];
@@ -103,16 +103,16 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][ind2];
       float i3 = imag[curr][pos];
       float i4 = imag[curr][ind4];
-      int new_pos = (pos - pos_in_unit - 2 * span) * 4 + (2 * unit_size + pos_in_unit) ; //new index of x3
+      int new_pos = (pos - pos_in_unit - (SIZE >> 1)) << 2 + (unit_size >> 1 + pos_in_unit) ; //new index of x3
       real[next][new_pos] = r1 - (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
       imag[next][new_pos] = i1 - (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
     }
     else
     {
       //x4 = x1 +j twiddle1k * x2 - twiddle2k * x3 -j twiddle3k * x4
-      int ind1 = pos - 3 * span; // index of x1
-      int ind2 = pos - 2 * span;
-      int ind3 = pos - span; 
+      int ind1 = pos - 3 * (SIZE >> 2); // index of x1
+      int ind2 = pos - (SIZE >> 1);
+      int ind3 = pos - (SIZE >> 2); 
       float r1 = real[curr][ind1];
       float r2 = real[curr][ind2];
       float r3 = real[curr][ind3];
@@ -121,7 +121,7 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][ind2];
       float i3 = imag[curr][ind3];
       float i4 = imag[curr][pos];
-      int new_pos = (pos - pos_in_unit - 3 * span) * 4 + (3 * unit_size + pos_in_unit) ; //new index of x3
+      int new_pos = (pos - pos_in_unit - 3 * (SIZE >> 2)) << 2 + (3 * unit_size + pos_in_unit) ; //new index of x3
       real[next][new_pos] = r1 - (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * i4 + twiddle3k_imag * r4);
       imag[next][new_pos] = i1 + (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
 
@@ -422,16 +422,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // memcpy(pinned_imag_image, imag_image, matSize);
 
 
-  printf("\n1st row real\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row imag\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row real\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row imag\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
 
   #define ASYNC_BLOCKS 16
 
@@ -463,16 +463,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
   // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
-  printf("\n1st row tranform real\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row tranform imag\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row tranform real\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row tranform imag\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
 
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
