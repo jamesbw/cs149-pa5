@@ -5,7 +5,7 @@ SIZEY ?= 1024
 
 OBJECTS = main.o ImageCleaner.o JPEGWriter.o CpuReference.o
 
-NVCCFLAGS = -arch=compute_20 -maxrregcount=16 -code=sm_20 -Xptxas "-v" -D SIZEX=$(SIZEX) -D SIZEY=$(SIZEY)
+NVCCFLAGS = -arch=compute_20 -code=sm_20 -Xptxas "-v" -D SIZEX=$(SIZEX) -D SIZEY=$(SIZEY)
 ifeq ($(DEBUG),1)
 NVCCFLAGS += -g -G
 else
