@@ -28,7 +28,7 @@
 //   {
 //     int pos_in_unit = threadIdx.x % unit_size;
 //   }
-  
+
 // }
 
 __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
@@ -54,7 +54,7 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 2)
   {
     int pos_in_unit = threadIdx.x % unit_size;
-    int twiddle_index = pos_in_unit * (SIZE >> 2) / unit_size; // twiddle index
+    temp = pos_in_unit * (SIZE >> 2) / unit_size; // twiddle index
     float twiddle1k_real = roots_real_local[temp];
     float twiddle1k_imag = roots_imag_local[temp];
     float twiddle2k_real = roots_real_local[temp << 1];
