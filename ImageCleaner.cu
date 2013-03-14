@@ -350,23 +350,23 @@ __device__ char inverseFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 
 __global__ void forwardFFTRow(float *real_image, float *imag_image)
 {
-  // int row = blockIdx.x;
-  // int col = threadIdx.x;
+  int row = blockIdx.x;
+  int col = threadIdx.x;
 
   __shared__ float real[2][SIZE];
   __shared__ float imag[2][SIZE];
 
 
-  // int offset = blockIdx.x * SIZE + threadIdx.x;
+  int offset = row * SIZE + col;
 
-  real[0][threadIdx.x] = real_image[blockIdx.x * SIZE + threadIdx.x];
-  imag[0][threadIdx.x] = imag_image[blockIdx.x * SIZE + threadIdx.x];
+  real[0][col] = real_image[offset];
+  imag[0][col] = imag_image[offset];
 
 
   char curr = forwardFFT_radix4(real, imag);
 
-  real_image[blockIdx.x * SIZE + threadIdx.x] = real[curr][threadIdx.x];
-  imag_image[blockIdx.x * SIZE + threadIdx.x] = imag[curr][threadIdx.x];
+  real_image[offset] = real[curr][col];
+  imag_image[offset] = imag[curr][col];
 }
 
 __global__ void inverseFFTRow(float *real_image, float *imag_image)
@@ -384,7 +384,7 @@ __global__ void inverseFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = inverseFFT_radix4(real, imag);
+  char curr = inverseFFT(col, real, imag);
 
   real_image[offset] = real[curr][col] / SIZE;
   imag_image[offset] = imag[curr][col] / SIZE;
@@ -424,7 +424,7 @@ __global__ void inverseFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  char curr = inverseFFT_radix4(real, imag);
+  char curr = inverseFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row] / SIZE;
   imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
