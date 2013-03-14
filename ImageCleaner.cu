@@ -363,7 +363,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = forwardFFT_radix4(real, imag);
+  char curr = forwardFFT(col, real, imag);
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
@@ -404,7 +404,7 @@ __global__ void forwardFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  char curr = forwardFFT_radix4(real, imag);
+  char curr = forwardFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row];
   imag_image[row * SIZE + col] = imag[curr][row];
