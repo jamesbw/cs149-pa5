@@ -266,7 +266,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = forwardFFT_radix4(real, imag);
+  char curr = forwardFFT(col, real, imag);
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
