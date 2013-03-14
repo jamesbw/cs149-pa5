@@ -20,15 +20,16 @@
 //----------------------------------------------------------------
 
 
-__device__ char forwardFFT_arbitrary_radix(int radix, float (*real)[SIZE], float (*imag)[SIZE])
-{
-  int span = SIZE / radix;
+// __device__ char forwardFFT_arbitrary_radix(int radix, float (*real)[SIZE], float (*imag)[SIZE])
+// {
+//   int span = SIZE / radix;
 
-  for (int unit_size = 1; unit_size < SIZE ; unit_size *= span)
-  {
-    int pos_in_unit = threadIdx.x % unit_size;
-  }
-}
+//   for (int unit_size = 1; unit_size < SIZE ; unit_size *= span)
+//   {
+//     int pos_in_unit = threadIdx.x % unit_size;
+//   }
+  
+// }
 
 __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
 {
