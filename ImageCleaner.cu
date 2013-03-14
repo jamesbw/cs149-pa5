@@ -125,6 +125,111 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
   return curr;
 }
 
+__device__ char inverseFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
+{
+
+  __shared__ float roots_real_local[SIZE];
+  __shared__ float roots_imag_local[SIZE];
+
+
+  float angle = TWO_PI * threadIdx.x / SIZE;
+  roots_real_local[threadIdx.x] = __cosf(angle);
+  roots_imag_local[threadIdx.x] = __sinf(angle);
+  
+
+  __syncthreads();
+
+  char curr = 0;
+  char next = 1;
+
+  // int span = SIZE >> 2;
+  int temp;
+
+  for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 2)
+  {
+    int pos_in_unit = threadIdx.x % unit_size;
+    temp = pos_in_unit * (SIZE >> 2) / unit_size; // twiddle index
+    float twiddle1k_real = roots_real_local[temp];
+    float twiddle1k_imag = roots_imag_local[temp];
+    float twiddle2k_real = roots_real_local[temp << 1];
+    float twiddle2k_imag = roots_imag_local[temp << 1];
+    float twiddle3k_real = roots_real_local[3*temp];
+    float twiddle3k_imag = roots_imag_local[3*temp];
+
+
+    if (threadIdx.x < (SIZE >> 2))
+    {
+      //x1 = x1 + twiddle1k * x2 + twiddle2k * x3 + twiddle3k * x4
+      temp = threadIdx.x + (SIZE >> 2); // index of x2
+      int ind3 = threadIdx.x + (SIZE >> 1);
+      int ind4 = ind3 + (SIZE >> 2); 
+      float r2 = real[curr][temp];
+      float r3 = real[curr][ind3];
+      float r4 = real[curr][ind4];
+      float i2 = imag[curr][temp];
+      float i3 = imag[curr][ind3];
+      float i4 = imag[curr][ind4];
+      temp = ((threadIdx.x - pos_in_unit) << 2) + pos_in_unit; //new index of x1
+      real[next][temp] = real[curr][threadIdx.x] + (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
+      imag[next][temp] = imag[curr][threadIdx.x] + (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * i4 + twiddle3k_imag * r4);
+    }
+    else if (threadIdx.x < SIZE >> 1)
+    {
+      //x2 = x1 - j*twiddle1k * x2 - twiddle2k * x3 + j twiddle3k * x4
+      temp = threadIdx.x - (SIZE >> 2); // index of x1
+      int ind3 = threadIdx.x + (SIZE >> 2);
+      int ind4 = threadIdx.x + (SIZE >> 1); 
+      float r2 = real[curr][threadIdx.x];
+      float r3 = real[curr][ind3];
+      float r4 = real[curr][ind4];
+      float i2 = imag[curr][threadIdx.x];
+      float i3 = imag[curr][ind3];
+      float i4 = imag[curr][ind4];
+      temp = ((threadIdx.x - pos_in_unit - (SIZE >> 2)) << 2) + (unit_size + pos_in_unit) ; //new index of x2
+      real[next][temp] = real[curr][temp] + (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
+      imag[next][temp] = imag[curr][temp] - (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
+
+    }
+    else if (threadIdx.x < (SIZE >> 1) + (SIZE >> 2))
+    {
+      //x3 = x1 - twiddle1k * x2 + twiddle2k * x3 - twiddle3k * x4
+      temp = threadIdx.x - (SIZE >> 1); // index of x1
+      int ind2 = threadIdx.x - (SIZE >> 2);
+      int ind4 = threadIdx.x + (SIZE >> 2); 
+      float r2 = real[curr][ind2];
+      float r3 = real[curr][threadIdx.x];
+      float r4 = real[curr][ind4];
+      float i2 = imag[curr][ind2];
+      float i3 = imag[curr][threadIdx.x];
+      float i4 = imag[curr][ind4];
+      temp = ((threadIdx.x - pos_in_unit - (SIZE >> 1)) << 2) + ((unit_size >> 1) + pos_in_unit) ; //new index of x3
+      real[next][temp] = real[curr][temp] - (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
+      imag[next][temp] = imag[curr][temp] - (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
+    }
+    else
+    {
+      //x4 = x1 +j twiddle1k * x2 - twiddle2k * x3 -j twiddle3k * x4
+      temp = threadIdx.x - 3 * (SIZE >> 2); // index of x1
+      int ind2 = threadIdx.x - (SIZE >> 1);
+      int ind3 = threadIdx.x - (SIZE >> 2); 
+      float r2 = real[curr][ind2];
+      float r3 = real[curr][ind3];
+      float r4 = real[curr][threadIdx.x];
+      float i2 = imag[curr][ind2];
+      float i3 = imag[curr][ind3];
+      float i4 = imag[curr][threadIdx.x];
+      temp = ((threadIdx.x - pos_in_unit - 3 * (SIZE >> 2)) << 2) + (3 * unit_size + pos_in_unit) ; //new index of x3
+      real[next][temp] = real[curr][temp] - (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * i4 + twiddle3k_imag * r4);
+      imag[next][temp] = imag[curr][temp] + (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
+
+    }
+  __syncthreads();
+    next = curr;
+    curr = 1 - curr;
+  }
+  return curr;
+}
+
 __device__ char forwardFFT(int pos, float (*real)[SIZE], float (*imag)[SIZE])
 {
   __shared__ float roots_real_local[SIZE/2];
@@ -279,7 +384,7 @@ __global__ void inverseFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = inverseFFT(col, real, imag);
+  char curr = inverseFFT_radix4(real, imag);
 
   real_image[offset] = real[curr][col] / SIZE;
   imag_image[offset] = imag[curr][col] / SIZE;
@@ -319,7 +424,7 @@ __global__ void inverseFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  char curr = inverseFFT(row, real, imag);
+  char curr = inverseFFT_radix4(real, imag);
 
   real_image[row * SIZE + col] = real[curr][row] / SIZE;
   imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
