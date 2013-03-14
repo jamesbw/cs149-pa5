@@ -164,7 +164,7 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
       float i2 = imag[curr][ind2];
       // float i3 = imag[curr][threadIdx.x];
       float i4 = imag[curr][ind4];
-      temp = ((threadIdx.x - pos_in_unit - (SIZE >> 1)) << 2) + ((unit_size >> 1) + pos_in_unit) ; //new index of x3
+      temp = ((threadIdx.x - pos_in_unit - (SIZE >> 1)) << 2) + ((unit_size << 1) + pos_in_unit) ; //new index of x3
       real[next][temp] = r1 - (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * real[curr][threadIdx.x] - twiddle2k_imag * imag[curr][threadIdx.x]) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
       imag[next][temp] = i1 - (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * imag[curr][threadIdx.x] + twiddle2k_imag * real[curr][threadIdx.x]) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
     }
