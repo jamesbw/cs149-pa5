@@ -149,7 +149,7 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
       int ind3 = threadIdx.x;
       int ind4 = threadIdx.x + (SIZE >> 2); 
 
-      int new_pos = ((threadIdx.x - pos_in_unit - (SIZE >> 1)) << 2) + ((unit_size >> 1) + pos_in_unit) ; //new index of x3
+      int new_pos = ((threadIdx.x - pos_in_unit - (SIZE >> 1)) << 2) + ((unit_size << 1) + pos_in_unit) ; //new index of x3
       real[next][new_pos] = real[curr][ind1] - real[curr][ind2] + real[curr][ind3] - real[curr][ind4];
       imag[next][new_pos] = imag[curr][ind1] - imag[curr][ind2] + imag[curr][ind3] - imag[curr][ind4];
 
