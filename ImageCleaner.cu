@@ -56,7 +56,7 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
     {
       //x1 = x1 + twiddle1k * x2 + twiddle2k * x3 + twiddle3k * x4
       temp = pos + (SIZE >> 2); // index of x2
-      int ind3 = ind2 + (SIZE >> 2);
+      int ind3 = pos + (SIZE >> 1);
       int ind4 = ind3 + (SIZE >> 2); 
       float r1 = real[curr][pos];
       float r2 = real[curr][temp];
