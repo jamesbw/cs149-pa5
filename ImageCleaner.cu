@@ -46,13 +46,13 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
     int twiddle1k_index = pos_in_unit * (SIZE >> 2) / unit_size; // twiddle index
     float twiddle1k_real = roots_real_local[twiddle1k_index];
     float twiddle1k_imag = roots_imag_local[twiddle1k_index];
-    float twiddle2k_real = roots_real_local[twiddle1k_index >> 1];
-    float twiddle2k_imag = roots_imag_local[twiddle1k_index >> 1];
+    float twiddle2k_real = roots_real_local[twiddle1k_index << 1];
+    float twiddle2k_imag = roots_imag_local[twiddle1k_index << 1];
     float twiddle3k_real = roots_real_local[3*twiddle1k_index];
     float twiddle3k_imag = roots_imag_local[3*twiddle1k_index];
 
 
-    if (pos < SIZE >> 2)
+    if (pos < (SIZE >> 2))
     {
       //x1 = x1 + twiddle1k * x2 + twiddle2k * x3 + twiddle3k * x4
       int ind2 = pos + (SIZE >> 2); // index of x2
@@ -66,7 +66,7 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][ind2];
       float i3 = imag[curr][ind3];
       float i4 = imag[curr][ind4];
-      int new_pos = (pos - pos_in_unit) << 2 + pos_in_unit; //new index of x1
+      int new_pos = ((pos - pos_in_unit) << 2) + pos_in_unit; //new index of x1
       real[next][new_pos] = r1 + (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
       imag[next][new_pos] = i1 + (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * i4 + twiddle3k_imag * r4);
     }
@@ -84,7 +84,7 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][pos];
       float i3 = imag[curr][ind3];
       float i4 = imag[curr][ind4];
-      int new_pos = (pos - pos_in_unit - (SIZE >> 2)) * 4 + (unit_size + pos_in_unit) ; //new index of x2
+      int new_pos = ((pos - pos_in_unit - (SIZE >> 2)) << 2) + (unit_size + pos_in_unit) ; //new index of x2
       real[next][new_pos] = r1 + (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
       imag[next][new_pos] = i1 - (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) + (twiddle3k_real * r4 - twiddle3k_imag * i4);
 
@@ -103,7 +103,7 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][ind2];
       float i3 = imag[curr][pos];
       float i4 = imag[curr][ind4];
-      int new_pos = (pos - pos_in_unit - (SIZE >> 1)) << 2 + (unit_size >> 1 + pos_in_unit) ; //new index of x3
+      int new_pos = ((pos - pos_in_unit - (SIZE >> 1)) << 2) + ((unit_size >> 1) + pos_in_unit) ; //new index of x3
       real[next][new_pos] = r1 - (twiddle1k_real * r2 - twiddle1k_imag * i2) + (twiddle2k_real * r3 - twiddle2k_imag * i3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
       imag[next][new_pos] = i1 - (twiddle1k_real * i2 + twiddle1k_imag * r2) + (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * i4 + twiddle3k_imag * r4);
     }
@@ -121,7 +121,7 @@ __device__ char forwardFFT_radix4(int pos, float (*real)[SIZE], float (*imag)[SI
       float i2 = imag[curr][ind2];
       float i3 = imag[curr][ind3];
       float i4 = imag[curr][pos];
-      int new_pos = (pos - pos_in_unit - 3 * (SIZE >> 2)) << 2 + (3 * unit_size + pos_in_unit) ; //new index of x3
+      int new_pos = ((pos - pos_in_unit - 3 * (SIZE >> 2)) << 2) + (3 * unit_size + pos_in_unit) ; //new index of x3
       real[next][new_pos] = r1 - (twiddle1k_real * i2 + twiddle1k_imag * r2) - (twiddle2k_real * r3 - twiddle2k_imag * i3) + (twiddle3k_real * i4 + twiddle3k_imag * r4);
       imag[next][new_pos] = i1 + (twiddle1k_real * r2 - twiddle1k_imag * i2) - (twiddle2k_real * i3 + twiddle2k_imag * r3) - (twiddle3k_real * r4 - twiddle3k_imag * i4);
 
