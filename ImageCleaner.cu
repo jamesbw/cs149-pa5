@@ -20,11 +20,14 @@
 //----------------------------------------------------------------
 
 
-// __shared__ float roots_real_local[SIZE];
-// __shared__ float roots_imag_local[SIZE];
+
 
 __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
 {
+  //these must be declared and filled elsewhere. Just added for compiler.
+  __shared__ float roots_real_local[SIZE];
+  __shared__ float roots_imag_local[SIZE];
+
   bool print = (threadIdx.x == 325 && blockIdx.x == 0);
   int radix = 1 << ((p+1) >> 1);
   int size = 1 << p;
@@ -120,8 +123,8 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   __syncthreads();
 
   int twiddle_index = pos_in_unit * unit_num * SIZE / size;
-  // float twiddle_real = roots_real_local[twiddle_index];
-  // float twiddle_imag = roots_imag_local[twiddle_index];
+  float twiddle_real = roots_real_local[twiddle_index];
+  float twiddle_imag = roots_imag_local[twiddle_index];
 
   // if (print)
   //   printf("%d: Twiddle index: %d, SIZE: %d\n", pos, twiddle_index, SIZE);
