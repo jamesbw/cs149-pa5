@@ -27,15 +27,16 @@
 // now combine: multiply by twiddle(pos_in_unit, unit_num)
 // dft of all with same pos_in_unit, keep in place fft(k, stride = size/k)
 
-
+__shared__ float roots_real_local[SIZE];
+__shared__ float roots_imag_local[SIZE];
 
 
 __device__ char forwardFFT_any_bis()
 {
-  return 0;
+
 }
 
-__device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr, float *roots_real_local, float *roots_imag_local)
+__device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
 {
   bool print = (threadIdx.x == 325 && blockIdx.x == 0);
   int radix = 1 << ((p+1) >> 1);
@@ -77,7 +78,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   //compute fft of these blocks of size size/radix
   if (print)
     printf("Recursively calling\n");
-  curr = forwardFFT_any(real, imag, offset + radix * unit_num * stride, stride, p >> 1, next, roots_real_local, roots_imag_local); //size / radix
+  curr = forwardFFT_any(real, imag, offset + radix * unit_num * stride, stride, p >> 1, next); //size / radix
   next = 1 - curr;
   if (print)
     printf("Return from rec calling\n");
@@ -102,7 +103,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   if (print)
     printf("Second Recursively calling\n");
-  return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr, roots_real_local, roots_imag_local);
+  return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr);
 }
 
 // 0 4   1 5    2  6   3 7
@@ -563,8 +564,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
 
 
   // char curr = forwardFFT_radix4(real, imag);
-  __shared__ float roots_real_local[SIZE];
-  __shared__ float roots_imag_local[SIZE];
+
 
 
 
@@ -575,12 +575,12 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   if(threadIdx.x == 325 && blockIdx.x == 0)
     printf("Print test %d\n", SIZE);
   int log_size = (SIZE == 1024 ? 10 : 9);
-  char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0, roots_real_local, roots_imag_local);
+  char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0);
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
-  if(blockIdx.x == 0)
-    printf("Thread %d returned %d\n", threadIdx.x, curr + 0);
+  // if(blockIdx.x == 0)
+  //   printf("Thread %d returned %d\n", threadIdx.x, curr + 0);
 }
 
 __global__ void inverseFFTRow(float *real_image, float *imag_image)
