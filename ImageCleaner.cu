@@ -764,6 +764,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   printf(" Finished  all blocka\n");
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
+  printf(" After synch\n");
 
 
   // forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
