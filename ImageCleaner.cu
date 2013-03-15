@@ -31,16 +31,16 @@ __shared__ float roots_real_local[SIZE];
 __shared__ float roots_imag_local[SIZE];
 
 
-__device__ char forwardFFT_any_bis()
-{
-  int radix = 1 << ((p+1) >> 1);
-  int size = 1 << p;
-  char curr = 0;
-  char next = 0;
-  int pos = threadIdx.x;
+// __device__ char forwardFFT_any_bis()
+// {
+//   int radix = 1 << ((p+1) >> 1);
+//   int size = 1 << p;
+//   char curr = 0;
+//   char next = 0;
+//   int pos = threadIdx.x;
 
 
-}
+// }
 
 __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
 {
