@@ -57,21 +57,6 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
     printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
   
   //base case
-  // if (size == 2)
-  // {
-  //   if (pos_in_unit == 1)
-  //   {
-  //     real[next][pos] = real[curr][pos - stride] - real[curr][pos];
-  //     imag[next][pos] = imag[curr][pos - stride] - imag[curr][pos];
-  //   }
-  //   else 
-  //   {
-  //     real[next][pos] = real[curr][pos] + real[curr][pos + stride];
-  //     imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
-  //   }
-  //   __syncthreads();
-  //   return next;
-  // }
 
   if (size == 4)
   {
@@ -110,6 +95,21 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
       int ind4 = pos;
       real[next][pos] = real[curr][ind1] - imag[curr][ind2] - real[curr][ind3] + imag[curr][ind4];
       imag[next][pos] = imag[curr][ind1] + real[curr][ind2] - imag[curr][ind3] - real[curr][ind4];
+    }
+    __syncthreads();
+    return next;
+  }
+  if (size == 2)
+  {
+    if (pos_in_unit == 1)
+    {
+      real[next][pos] = real[curr][pos - stride] - real[curr][pos];
+      imag[next][pos] = imag[curr][pos - stride] - imag[curr][pos];
+    }
+    else 
+    {
+      real[next][pos] = real[curr][pos] + real[curr][pos + stride];
+      imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
     }
     __syncthreads();
     return next;
