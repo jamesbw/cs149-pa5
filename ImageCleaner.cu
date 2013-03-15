@@ -771,8 +771,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
 
-  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
   printf("\n1st row tranform real\n");
   for (int i = 0; i < SIZE; ++i)
