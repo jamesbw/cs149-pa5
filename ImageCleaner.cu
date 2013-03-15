@@ -759,6 +759,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS, imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
+    printf(" Finished  a block\n");
   }
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
@@ -790,6 +791,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&fftc,start_bis,stop_bis));
+
+  printf(" Finished  cols\n");
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
