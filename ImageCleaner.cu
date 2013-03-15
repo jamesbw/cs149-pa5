@@ -37,16 +37,26 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   char next = 1 - curr;
   int pos = threadIdx.x;
 
-  //base case
-  if (size == 1)
-  {
-    return curr;
-  }
 
 
   int unit_num = ((pos - offset) / stride) / radix;
   int pos_in_unit = ((pos - offset) / stride) % radix;
 
+  //base case
+  if (size == 2)
+  {
+    if (pos_in_unit == 1)
+    {
+      real[next][pos] = real[curr][pos - stride] - real[curr][pos];
+      imag[next][pos] = imag[curr][pos - stride] - imag[curr][pos];
+    }
+    else 
+    {
+      real[next][pos] = real[curr][pos] + real[curr][pos + stride];
+      imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
+    }
+    return next;
+  }
 
   //move into radix blocks of radix*n + i
   int new_pos = (radix * pos_in_unit + unit_num) * stride + offset;
