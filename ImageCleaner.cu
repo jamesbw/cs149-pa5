@@ -22,124 +22,124 @@
 
 
 
-__device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
-{
-  //these must be declared and filled elsewhere. Just added for compiler.
-  __shared__ float roots_real_local[SIZE];
-  __shared__ float roots_imag_local[SIZE];
+// __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
+// {
+//   //these must be declared and filled elsewhere. Just added for compiler.
+//   __shared__ float roots_real_local[SIZE];
+//   __shared__ float roots_imag_local[SIZE];
 
-  bool print = (threadIdx.x == 325 && blockIdx.x == 0);
-  int radix = 1 << ((p+1) >> 1);
-  int size = 1 << p;
-  char next = 1 - curr;
-  int pos = threadIdx.x;
+//   bool print = (threadIdx.x == 325 && blockIdx.x == 0);
+//   int radix = 1 << ((p+1) >> 1);
+//   int size = 1 << p;
+//   char next = 1 - curr;
+//   int pos = threadIdx.x;
 
-  int unit_num = ((pos - offset) / stride) / radix;
-  int pos_in_unit = ((pos - offset) / stride) % radix;
+//   int unit_num = ((pos - offset) / stride) / radix;
+//   int pos_in_unit = ((pos - offset) / stride) % radix;
 
-  if (print)
-    printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
+//   if (print)
+//     printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
   
-  //base case
+//   //base case
 
-  // if (size == 4)
-  // {
-  //   pos_in_unit = (pos - offset) / stride;
-  //   if (pos_in_unit == 0)
-  //   {
-  //     int ind1 = pos;
-  //     int ind2 = pos + stride;
-  //     int ind3 = pos + 2 * stride;
-  //     int ind4 = pos + 3 * stride;
-  //     real[next][pos] = real[curr][ind1] + real[curr][ind2] + real[curr][ind3] + real[curr][ind4];
-  //     imag[next][pos] = imag[curr][ind1] + imag[curr][ind2] + imag[curr][ind3] + imag[curr][ind4];
-  //   }
-  //   else if (pos_in_unit == 1)
-  //   {
-  //     int ind1 = pos - stride;
-  //     int ind2 = pos;
-  //     int ind3 = pos + stride;
-  //     int ind4 = pos + 2 * stride;
-  //     real[next][ind3] = real[curr][ind1] + imag[curr][ind2] - real[curr][ind3] - imag[curr][ind4];
-  //     imag[next][ind3] = imag[curr][ind1] - real[curr][ind2] - imag[curr][ind3] + real[curr][ind4];
-  //   }
-  //   else if (pos_in_unit == 2)
-  //   {
-  //     int ind1 = pos - 2 * stride;
-  //     int ind2 = pos - stride;
-  //     int ind3 = pos;
-  //     int ind4 = pos + stride;
-  //     real[next][ind2] = real[curr][ind1] - real[curr][ind2] + real[curr][ind3] - real[curr][ind4];
-  //     imag[next][ind2] = imag[curr][ind1] - imag[curr][ind2] + imag[curr][ind3] - imag[curr][ind4];
-  //   }
-  //   else
-  //   {
-  //     int ind1 = pos - 3 * stride;
-  //     int ind2 = pos - 2 * stride;
-  //     int ind3 = pos - stride;
-  //     int ind4 = pos;
-  //     real[next][pos] = real[curr][ind1] - imag[curr][ind2] - real[curr][ind3] + imag[curr][ind4];
-  //     imag[next][pos] = imag[curr][ind1] + real[curr][ind2] - imag[curr][ind3] - real[curr][ind4];
-  //   }
-  //   __syncthreads();
-  //   return next;
-  // }
-  if (size == 2)
-  {
-    if (pos_in_unit == 1)
-    {
-      real[next][pos] = real[curr][pos - stride] - real[curr][pos];
-      imag[next][pos] = imag[curr][pos - stride] - imag[curr][pos];
-    }
-    else 
-    {
-      real[next][pos] = real[curr][pos] + real[curr][pos + stride];
-      imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
-    }
-    __syncthreads();
-    return next;
-  }
+//   // if (size == 4)
+//   // {
+//   //   pos_in_unit = (pos - offset) / stride;
+//   //   if (pos_in_unit == 0)
+//   //   {
+//   //     int ind1 = pos;
+//   //     int ind2 = pos + stride;
+//   //     int ind3 = pos + 2 * stride;
+//   //     int ind4 = pos + 3 * stride;
+//   //     real[next][pos] = real[curr][ind1] + real[curr][ind2] + real[curr][ind3] + real[curr][ind4];
+//   //     imag[next][pos] = imag[curr][ind1] + imag[curr][ind2] + imag[curr][ind3] + imag[curr][ind4];
+//   //   }
+//   //   else if (pos_in_unit == 1)
+//   //   {
+//   //     int ind1 = pos - stride;
+//   //     int ind2 = pos;
+//   //     int ind3 = pos + stride;
+//   //     int ind4 = pos + 2 * stride;
+//   //     real[next][ind3] = real[curr][ind1] + imag[curr][ind2] - real[curr][ind3] - imag[curr][ind4];
+//   //     imag[next][ind3] = imag[curr][ind1] - real[curr][ind2] - imag[curr][ind3] + real[curr][ind4];
+//   //   }
+//   //   else if (pos_in_unit == 2)
+//   //   {
+//   //     int ind1 = pos - 2 * stride;
+//   //     int ind2 = pos - stride;
+//   //     int ind3 = pos;
+//   //     int ind4 = pos + stride;
+//   //     real[next][ind2] = real[curr][ind1] - real[curr][ind2] + real[curr][ind3] - real[curr][ind4];
+//   //     imag[next][ind2] = imag[curr][ind1] - imag[curr][ind2] + imag[curr][ind3] - imag[curr][ind4];
+//   //   }
+//   //   else
+//   //   {
+//   //     int ind1 = pos - 3 * stride;
+//   //     int ind2 = pos - 2 * stride;
+//   //     int ind3 = pos - stride;
+//   //     int ind4 = pos;
+//   //     real[next][pos] = real[curr][ind1] - imag[curr][ind2] - real[curr][ind3] + imag[curr][ind4];
+//   //     imag[next][pos] = imag[curr][ind1] + real[curr][ind2] - imag[curr][ind3] - real[curr][ind4];
+//   //   }
+//   //   __syncthreads();
+//   //   return next;
+//   // }
+//   if (size == 2)
+//   {
+//     if (pos_in_unit == 1)
+//     {
+//       real[next][pos] = real[curr][pos - stride] - real[curr][pos];
+//       imag[next][pos] = imag[curr][pos - stride] - imag[curr][pos];
+//     }
+//     else 
+//     {
+//       real[next][pos] = real[curr][pos] + real[curr][pos + stride];
+//       imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
+//     }
+//     __syncthreads();
+//     return next;
+//   }
 
-  //move into radix blocks of radix*n + i
-  int new_pos = (size / radix * pos_in_unit + unit_num) * stride + offset;
-  // if (print)
-  //   printf("%d: new_pos: %d\n", pos, new_pos);
-  real[next][new_pos] = real[curr][pos];
-  imag[next][new_pos] = imag[curr][pos];
+//   //move into radix blocks of radix*n + i
+//   int new_pos = (size / radix * pos_in_unit + unit_num) * stride + offset;
+//   // if (print)
+//   //   printf("%d: new_pos: %d\n", pos, new_pos);
+//   real[next][new_pos] = real[curr][pos];
+//   imag[next][new_pos] = imag[curr][pos];
 
-  __syncthreads();
+//   __syncthreads();
 
-  //compute fft of these blocks of size size/radix
-  unit_num = ((pos - offset) / stride) / (size / radix);
-  pos_in_unit = ((pos - offset) / stride) % (size / radix);
+//   //compute fft of these blocks of size size/radix
+//   unit_num = ((pos - offset) / stride) / (size / radix);
+//   pos_in_unit = ((pos - offset) / stride) % (size / radix);
 
-  // if (print)
-  //   printf("%d: Recursively calling\n", pos);
-  curr = forwardFFT_any(real, imag, offset + size / radix * unit_num * stride, stride, p >> 1, next); //size / radix
-  next = 1 - curr;
-  // if (print)
-  //   printf("%d: Return from rec calling\n", pos);
+//   // if (print)
+//   //   printf("%d: Recursively calling\n", pos);
+//   curr = forwardFFT_any(real, imag, offset + size / radix * unit_num * stride, stride, p >> 1, next); //size / radix
+//   next = 1 - curr;
+//   // if (print)
+//   //   printf("%d: Return from rec calling\n", pos);
 
-  __syncthreads();
+//   __syncthreads();
 
-  int twiddle_index = pos_in_unit * unit_num * SIZE / size;
-  float twiddle_real = roots_real_local[twiddle_index];
-  float twiddle_imag = roots_imag_local[twiddle_index];
+//   int twiddle_index = pos_in_unit * unit_num * SIZE / size;
+//   float twiddle_real = roots_real_local[twiddle_index];
+//   float twiddle_imag = roots_imag_local[twiddle_index];
 
-  // if (print)
-  //   printf("%d: Twiddle index: %d, SIZE: %d\n", pos, twiddle_index, SIZE);
+//   // if (print)
+//   //   printf("%d: Twiddle index: %d, SIZE: %d\n", pos, twiddle_index, SIZE);
 
-  //store twiddle * value
-  float r = real[curr][pos], i = imag[curr][pos];
-  real[curr][pos] = twiddle_real * r - twiddle_imag * i;
-  imag[curr][pos] = twiddle_imag * r + twiddle_real * i;
+//   //store twiddle * value
+//   float r = real[curr][pos], i = imag[curr][pos];
+//   real[curr][pos] = twiddle_real * r - twiddle_imag * i;
+//   imag[curr][pos] = twiddle_imag * r + twiddle_real * i;
 
-  __syncthreads();
+//   __syncthreads();
 
-  // if (print)
-  //   printf("%d: Second Recursively calling\n", pos);
-  return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr);
-}
+//   // if (print)
+//   //   printf("%d: Second Recursively calling\n", pos);
+//   return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr);
+// }
 
 // 0 4   1 5    2  6   3 7
 
@@ -781,7 +781,7 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS, imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
-    CUDA_ERROR_CHECK(cudaStreamSynchronize(stream[i]));
+    // CUDA_ERROR_CHECK(cudaStreamSynchronize(stream[i]));
     // printf(" Finished  a block\n");
   }
   printf(" Finished  all blocka\n");
