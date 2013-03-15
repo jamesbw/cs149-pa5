@@ -694,8 +694,8 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventRecord(start,filterStream));
   
   // Here is where we copy matrices down to the device 
-  // CUDA_ERROR_CHECK(cudaMemcpy(device_real,real_image,matSize,cudaMemcpyHostToDevice));
-  // CUDA_ERROR_CHECK(cudaMemcpy(device_imag,imag_image,matSize,cudaMemcpyHostToDevice));
+  CUDA_ERROR_CHECK(cudaMemcpy(device_real,real_image,matSize,cudaMemcpyHostToDevice));
+  CUDA_ERROR_CHECK(cudaMemcpy(device_imag,imag_image,matSize,cudaMemcpyHostToDevice));
   
   // Stop timing for transfer down
   CUDA_ERROR_CHECK(cudaEventRecord(stop,filterStream));
@@ -755,21 +755,21 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
 
-  for (int i = 0; i < ASYNC_BLOCKS; ++i)
-  {
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
-    CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS, imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
-    forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
-    CUDA_ERROR_CHECK(cudaStreamSynchronize(stream[i]));
-    printf(" Finished  a block\n");
-  }
-  printf(" Finished  all blocka\n");
+  // for (int i = 0; i < ASYNC_BLOCKS; ++i)
+  // {
+  //   CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
+  //   CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS, imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
+  //   forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
+  //   CUDA_ERROR_CHECK(cudaStreamSynchronize(stream[i]));
+  //   printf(" Finished  a block\n");
+  // }
+  // printf(" Finished  all blocka\n");
 
-  CUDA_ERROR_CHECK(cudaDeviceSynchronize());
-  printf(" After synch\n");
+  // CUDA_ERROR_CHECK(cudaDeviceSynchronize());
+  // printf(" After synch\n");
 
 
-  // forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
+  forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
 
   // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
   // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
