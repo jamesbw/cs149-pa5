@@ -531,8 +531,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  // char curr = forwardFFT_radix4(real, imag);
-  char curr = forwardFFT(col, real, imag);
+  char curr = forwardFFT_radix4(real, imag);
+  // char curr = forwardFFT(col, real, imag);
 
 
 
@@ -570,8 +570,8 @@ __global__ void inverseFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  // char curr = inverseFFT_radix4(real, imag);
-  char curr = inverseFFT(col, real, imag);
+  char curr = inverseFFT_radix4(real, imag);
+  // char curr = inverseFFT(col, real, imag);
 
   real_image[offset] = real[curr][col] / SIZE;
   imag_image[offset] = imag[curr][col] / SIZE;
@@ -591,8 +591,8 @@ __global__ void forwardFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  // char curr = forwardFFT_radix4(real, imag);
-  char curr = forwardFFT(row, real, imag);
+  char curr = forwardFFT_radix4(real, imag);
+  // char curr = forwardFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row];
   imag_image[row * SIZE + col] = imag[curr][row];
@@ -612,8 +612,8 @@ __global__ void inverseFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  // char curr = inverseFFT_radix4(real, imag);
-  char curr = inverseFFT(row, real, imag);
+  char curr = inverseFFT_radix4(real, imag);
+  // char curr = inverseFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row] / SIZE;
   imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
@@ -750,16 +750,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   // memcpy(pinned_imag_image, imag_image, matSize);
 
 
-  printf("\n1st row real\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row imag\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row real\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row imag\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
 
   #define ASYNC_BLOCKS 16
 
@@ -792,19 +792,19 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   // forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
 
-  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
-  printf("\n1st row tranform real\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row tranform imag\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row tranform real\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row tranform imag\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
 
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
