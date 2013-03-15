@@ -30,6 +30,12 @@
 __shared__ float roots_real_local[SIZE];
 __shared__ float roots_imag_local[SIZE];
 
+
+__device__ char forwardFFT_any_bis()
+{
+
+}
+
 __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
 {
   bool print = (threadIdx.x == 325 && blockIdx.x == 0);
@@ -57,7 +63,6 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
       real[next][pos] = real[curr][pos] + real[curr][pos + stride];
       imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
     }
-    __syncthreads();
     return next;
   }
 
@@ -98,7 +103,9 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   if (print)
     printf("Second Recursively calling\n");
-  return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr); //radix
+  curr = forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr);
+  __syncthreads();
+  return curr;
 
 }
 
