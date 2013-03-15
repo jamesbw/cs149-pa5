@@ -55,7 +55,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   int pos_in_unit = ((pos - offset) / stride) % radix;
 
   if (print)
-    printf("Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", offset, stride, radix, size, unit_num, pos_in_unit);
+    printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
   
   //base case
   if (size == 2)
@@ -77,7 +77,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   //move into radix blocks of radix*n + i
   int new_pos = (size / radix * pos_in_unit + unit_num) * stride + offset;
   if (print)
-    printf("new_pos: %d\n", new_pos);
+    printf("%d: new_pos: %d\n", pos, new_pos);
   real[next][new_pos] = real[curr][pos];
   imag[next][new_pos] = imag[curr][pos];
 
@@ -85,11 +85,11 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   //compute fft of these blocks of size size/radix
   if (print)
-    printf("Recursively calling\n");
+    printf("%d: Recursively calling\n", pos);
   curr = forwardFFT_any(real, imag, offset + size / radix * pos_in_unit * stride, stride, p >> 1, next); //size / radix
   next = 1 - curr;
   if (print)
-    printf("Return from rec calling\n");
+    printf("%d: Return from rec calling\n", pos);
 
   __syncthreads();
 
@@ -100,7 +100,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   float twiddle_imag = roots_imag_local[twiddle_index];
 
   if (print)
-    printf("Twiddle index: %d, SIZE: %d\n", twiddle_index, SIZE);
+    printf("%d: Twiddle index: %d, SIZE: %d\n", pos, twiddle_index, SIZE);
 
   //store twiddle * value
   float r = real[curr][pos], i = imag[curr][pos];
@@ -110,7 +110,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   __syncthreads();
 
   if (print)
-    printf("Second Recursively calling\n");
+    printf("%d: Second Recursively calling\n", pos);
   return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr);
 }
 
