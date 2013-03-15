@@ -572,11 +572,11 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
     printf("Print test %d\n", SIZE);
   int log_size = (SIZE == 1024 ? 10 : 9);
   char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0);
-  if(blockIdx.x == 0)
-    printf("Thread %d returned %d\n", threadIdx.x, curr + 0);
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
+  if(blockIdx.x == 0)
+    printf("Thread %d returned %d\n", threadIdx.x, curr + 0);
 }
 
 __global__ void inverseFFTRow(float *real_image, float *imag_image)
