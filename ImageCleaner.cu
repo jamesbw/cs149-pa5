@@ -75,8 +75,8 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
       int ind2 = pos;
       int ind3 = pos + stride;
       int ind4 = pos + 2 * stride;
-      real[next][pos] = real[curr][ind1] + imag[curr][ind2] - real[curr][ind3] - imag[curr][ind4];
-      imag[next][pos] = imag[curr][ind1] - real[curr][ind2] - imag[curr][ind3] + real[curr][ind4];
+      real[next][ind3] = real[curr][ind1] + imag[curr][ind2] - real[curr][ind3] - imag[curr][ind4];
+      imag[next][ind3] = imag[curr][ind1] - real[curr][ind2] - imag[curr][ind3] + real[curr][ind4];
     }
     else if (pos_in_unit == 2)
     {
@@ -84,8 +84,8 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
       int ind2 = pos - stride;
       int ind3 = pos;
       int ind4 = pos + stride;
-      real[next][pos] = real[curr][ind1] - real[curr][ind2] + real[curr][ind3] - real[curr][ind4];
-      imag[next][pos] = imag[curr][ind1] - imag[curr][ind2] + imag[curr][ind3] - imag[curr][ind4];
+      real[next][ind2] = real[curr][ind1] - real[curr][ind2] + real[curr][ind3] - real[curr][ind4];
+      imag[next][ind2] = imag[curr][ind1] - imag[curr][ind2] + imag[curr][ind3] - imag[curr][ind4];
     }
     else
     {
