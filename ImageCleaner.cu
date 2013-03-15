@@ -86,7 +86,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   //compute fft of these blocks of size size/radix
   if (print)
     printf("Recursively calling\n");
-  curr = forwardFFT_any(real, imag, offset + radix * unit_num * stride, stride, p >> 1, next); //size / radix
+  curr = forwardFFT_any(real, imag, offset + size / radix * pos_in_unit * stride, stride, p >> 1, next); //size / radix
   next = 1 - curr;
   if (print)
     printf("Return from rec calling\n");
