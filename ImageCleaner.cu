@@ -84,16 +84,16 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   __syncthreads();
 
   //compute fft of these blocks of size size/radix
+  unit_num = ((pos - offset) / stride) / (size / radix);
   if (print)
     printf("%d: Recursively calling\n", pos);
-  curr = forwardFFT_any(real, imag, offset + size / radix * pos_in_unit * stride, stride, p >> 1, next); //size / radix
+  curr = forwardFFT_any(real, imag, offset + size / radix * unit_num * stride, stride, p >> 1, next); //size / radix
   next = 1 - curr;
   if (print)
     printf("%d: Return from rec calling\n", pos);
 
   __syncthreads();
 
-  unit_num = ((pos - offset) / stride) / (size / radix);
   pos_in_unit = ((pos - offset) / stride) % (size / radix);
   int twiddle_index = pos_in_unit * unit_num * SIZE / size;
   float twiddle_real = roots_real_local[twiddle_index];
