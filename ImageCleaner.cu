@@ -583,8 +583,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
     printf("Print test %d\n", SIZE);
   int log_size = (SIZE == 1024 ? 10 : 9);
   //remove
-  log_size = 1
-  while (1 << log_size < SIZE)
+  log_size = 1;
+  while ((1 << log_size) < SIZE)
     log_size <<=1;
   char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0);
 
