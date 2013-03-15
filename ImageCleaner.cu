@@ -53,8 +53,8 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   int unit_num = ((pos - offset) / stride) / radix;
   int pos_in_unit = ((pos - offset) / stride) % radix;
 
-  // if (print)
-  //   printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
+  if (print)
+    printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
   
   //base case
   // if (size == 2)
