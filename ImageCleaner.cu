@@ -86,7 +86,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   float twiddle_imag = roots_imag_local[twiddle_index];
 
   if (print)
-    printf("Twiddle index: %d\n", twiddle_index);
+    printf("Twiddle index: %d, SIZE: %d\n", twiddle_index, SIZE);
 
   //store twiddle * value
   float r = real[curr][pos], i = imag[curr][pos];
