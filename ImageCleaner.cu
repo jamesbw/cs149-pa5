@@ -44,7 +44,7 @@ __shared__ float roots_imag_local[SIZE];
 
 __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
 {
-  bool print = (threadIdx.x == 325 && blockIdx.x == 0);
+  // bool print = (threadIdx.x == 325 && blockIdx.x == 0);
   int radix = 1 << ((p+1) >> 1);
   int size = 1 << p;
   char next = 1 - curr;
@@ -53,21 +53,63 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   int unit_num = ((pos - offset) / stride) / radix;
   int pos_in_unit = ((pos - offset) / stride) % radix;
 
-  if (print)
-    printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
+  // if (print)
+  //   printf("%d: Offset: %d, Stride: %d, Radix: %d, size: %d, unit_num: %d, pos_in_unit: %d\n", pos, offset, stride, radix, size, unit_num, pos_in_unit);
   
   //base case
-  if (size == 2)
+  // if (size == 2)
+  // {
+  //   if (pos_in_unit == 1)
+  //   {
+  //     real[next][pos] = real[curr][pos - stride] - real[curr][pos];
+  //     imag[next][pos] = imag[curr][pos - stride] - imag[curr][pos];
+  //   }
+  //   else 
+  //   {
+  //     real[next][pos] = real[curr][pos] + real[curr][pos + stride];
+  //     imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
+  //   }
+  //   __syncthreads();
+  //   return next;
+  // }
+
+  if (size == 4)
   {
-    if (pos_in_unit == 1)
+    if (pos_in_unit == 0)
     {
-      real[next][pos] = real[curr][pos - stride] - real[curr][pos];
-      imag[next][pos] = imag[curr][pos - stride] - imag[curr][pos];
+      int ind1 = pos;
+      int ind2 = pos + stride;
+      int ind3 = pos + 2 * stride;
+      int ind4 = pos + 3 * stride;
+      real[next][pos] = real[curr][ind1] + real[curr][ind2] + real[curr][ind3] + real[curr][ind4];
+      imag[next][pos] = imag[curr][ind1] + imag[curr][ind2] + imag[curr][ind3] + imag[curr][ind4];
     }
-    else 
+    else if (pos_in_unit == 1)
     {
-      real[next][pos] = real[curr][pos] + real[curr][pos + stride];
-      imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
+      int ind1 = pos - stride;
+      int ind2 = pos;
+      int ind3 = pos + stride;
+      int ind4 = pos + 2 * stride;
+      real[next][new_pos] = real[curr][ind1] + imag[curr][ind2] - real[curr][ind3] - imag[curr][ind4];
+      imag[next][new_pos] = imag[curr][ind1] - real[curr][ind2] - imag[curr][ind3] + real[curr][ind4];
+    }
+    else if (pos_in_unit == 2)
+    {
+      int ind1 = pos - 2 * stride;
+      int ind2 = pos - stride;
+      int ind3 = pos;
+      int ind4 = pos + stride;
+      real[next][new_pos] = real[curr][ind1] - real[curr][ind2] + real[curr][ind3] - real[curr][ind4];
+      imag[next][new_pos] = imag[curr][ind1] - imag[curr][ind2] + imag[curr][ind3] - imag[curr][ind4];
+    }
+    else
+    {
+      int ind1 = pos - 3 * stride;
+      int ind2 = pos - 2 * stride;
+      int ind3 = pos - stride;
+      int ind4 = pos;
+      real[next][new_pos] = real[curr][ind1] - imag[curr][ind2] - real[curr][ind3] + imag[curr][ind4];
+      imag[next][new_pos] = imag[curr][ind1] + real[curr][ind2] - imag[curr][ind3] - real[curr][ind4];
     }
     __syncthreads();
     return next;
@@ -75,8 +117,8 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   //move into radix blocks of radix*n + i
   int new_pos = (size / radix * pos_in_unit + unit_num) * stride + offset;
-  if (print)
-    printf("%d: new_pos: %d\n", pos, new_pos);
+  // if (print)
+  //   printf("%d: new_pos: %d\n", pos, new_pos);
   real[next][new_pos] = real[curr][pos];
   imag[next][new_pos] = imag[curr][pos];
 
@@ -84,22 +126,23 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   //compute fft of these blocks of size size/radix
   unit_num = ((pos - offset) / stride) / (size / radix);
-  if (print)
-    printf("%d: Recursively calling\n", pos);
+  pos_in_unit = ((pos - offset) / stride) % (size / radix);
+
+  // if (print)
+  //   printf("%d: Recursively calling\n", pos);
   curr = forwardFFT_any(real, imag, offset + size / radix * unit_num * stride, stride, p >> 1, next); //size / radix
   next = 1 - curr;
-  if (print)
-    printf("%d: Return from rec calling\n", pos);
+  // if (print)
+  //   printf("%d: Return from rec calling\n", pos);
 
   __syncthreads();
 
-  pos_in_unit = ((pos - offset) / stride) % (size / radix);
   int twiddle_index = pos_in_unit * unit_num * SIZE / size;
   float twiddle_real = roots_real_local[twiddle_index];
   float twiddle_imag = roots_imag_local[twiddle_index];
 
-  if (print)
-    printf("%d: Twiddle index: %d, SIZE: %d\n", pos, twiddle_index, SIZE);
+  // if (print)
+  //   printf("%d: Twiddle index: %d, SIZE: %d\n", pos, twiddle_index, SIZE);
 
   //store twiddle * value
   float r = real[curr][pos], i = imag[curr][pos];
@@ -108,8 +151,8 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   __syncthreads();
 
-  if (print)
-    printf("%d: Second Recursively calling\n", pos);
+  // if (print)
+  //   printf("%d: Second Recursively calling\n", pos);
   return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr);
 }
 
@@ -580,8 +623,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   roots_real_local[threadIdx.x] = __cosf(angle);
   roots_imag_local[threadIdx.x] = __sinf(angle);
   __syncthreads();
-  if(threadIdx.x == 325 && blockIdx.x == 0)
-    printf("Print test %d\n", SIZE);
+  // if(threadIdx.x == 325 && blockIdx.x == 0)
+  //   printf("Print test %d\n", SIZE);
   int log_size = 1;
   while ((1 << log_size) < SIZE)
     log_size +=1;
