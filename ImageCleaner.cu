@@ -59,18 +59,20 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   }
 
   //move into radix blocks of radix*n + i
-  int new_pos = (radix * pos_in_unit + unit_num) * stride + offset;
+  int new_pos = (size / radix * pos_in_unit + unit_num) * stride + offset;
   real[next][new_pos] = real[curr][pos];
   imag[next][new_pos] = imag[curr][pos];
 
   __syncthreads();
 
   //compute fft of these blocks of size size/radix
-  curr = forwardFFT_any(real, imag, offset + radix * unit_num * stride, stride, p >> 1, curr); //size / radix
+  curr = forwardFFT_any(real, imag, offset + size / radix * unit_num * stride, stride, p >> 1, next); //size / radix
   next = 1 - curr;
 
   __syncthreads();
 
+  unit_num = ((pos - offset) / stride) / (size / radix);
+  pos_in_unit = ((pos - offset) / stride) % (size / radix);
   int twiddle_index = pos_in_unit * unit_num * SIZE / size;
   float twiddle_real = roots_real_local[twiddle_index];
   float twiddle_imag = roots_imag_local[twiddle_index];
@@ -90,7 +92,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
 }
 
-
+0 4   1 5    2  6   3 7
 
 
 
