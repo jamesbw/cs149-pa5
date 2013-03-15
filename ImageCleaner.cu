@@ -567,10 +567,12 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   roots_real_local[threadIdx.x] = __cosf(angle);
   roots_imag_local[threadIdx.x] = __sinf(angle);
   __syncthreads();
-  if(threadIdx.x == 0 && blockIdx.x == 0)
+  if(threadIdx.x == 325 && blockIdx.x == 0)
     printf("Print test %d\n", SIZE);
   int log_size = (SIZE == 1024 ? 10 : 9);
   char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0);
+  if(threadIdx.x == 325 && blockIdx.x == 0)
+    printf("Returned\n");
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
