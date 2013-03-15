@@ -60,6 +60,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   if (size == 4)
   {
+    pos_in_unit = (pos - offset) / stride;
     if (pos_in_unit == 0)
     {
       int ind1 = pos;
