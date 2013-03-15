@@ -27,11 +27,15 @@
 // now combine: multiply by twiddle(pos_in_unit, unit_num)
 // dft of all with same pos_in_unit, keep in place fft(k, stride = size/k)
 
+__shared__ float roots_real_local[SIZE];
+__shared__ float roots_imag_local[SIZE];
+
 __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
 {
   int radix = 1 << ((p+1) >> 1);
   int size = 1 << p;
   char next = 1 - curr;
+  int pos = threadIdx.x;
 
   //base case
   if (size == 1)
@@ -52,7 +56,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   __syncthreads();
 
   //compute fft of these blocks of size size/radix
-  curr = forwardFFT(real, imag, offset + radix * unit_num * stride, stride, p >> 1, curr); //size / radix
+  curr = forwardFFT_any(real, imag, offset + radix * unit_num * stride, stride, p >> 1, curr); //size / radix
   next = 1 - curr;
 
   __syncthreads();
@@ -72,7 +76,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
   __syncthreads();
 
-  return forwardFFT(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr); //radix
+  return forwardFFT_any(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr); //radix
 
 }
 
@@ -534,6 +538,14 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
 
 
   // char curr = forwardFFT_radix4(real, imag);
+
+
+
+
+  float angle = - TWO_PI * threadIdx.x / SIZE;
+  roots_real_local[threadIdx.x] = __cosf(angle);
+  roots_imag_local[threadIdx.x] = __sinf(angle);
+  __syncthreads();
   char curr = forwardFFT_any(real, imag, 0, 1, 10, 0);
 
   real_image[offset] = real[curr][col];
