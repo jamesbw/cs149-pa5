@@ -20,6 +20,88 @@
 //----------------------------------------------------------------
 
 
+// 512 = 16 * 32
+// radix k = sqrt(size)
+// move into k blocks of kn + i
+// compute fft(size / k) for each block
+// now combine: multiply by twiddle(pos_in_unit, unit_num)
+// dft of all with same pos_in_unit, keep in place fft(k, stride = size/k)
+
+__device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
+{
+  int radix = 1 << ((p+1) >> 1);
+  int size = 1 << p;
+  char next = 1 - curr;
+
+  //base case
+  if (size == 1)
+  {
+    return curr;
+  }
+
+
+  int unit_num = ((pos - offset) / stride) / radix;
+  int pos_in_unit = ((pos - offset) / stride) % radix;
+
+
+  //move into radix blocks of radix*n + i
+  int new_pos = (radix * pos_in_unit + unit_num) * stride + offset;
+  real[next][new_pos] = real[curr][pos];
+  imag[next][new_pos] = imag[curr][pos];
+
+  __syncthreads();
+
+  //compute fft of these blocks of size size/radix
+  curr = forwardFFT(real, imag, offset + radix * unit_num * stride, stride, p >> 1, curr); //size / radix
+  next = 1 - curr;
+
+  __syncthreads();
+
+  int twiddle_index = pos_in_unit * unit_num * SIZE / size;
+  float twiddle_real = roots_real_local[twiddle_index];
+  float twiddle_imag = roots_imag_local[twiddle_index];
+
+
+
+  //todo keep track of curr and next
+
+  //store twiddle * value
+  float r = real[curr][pos], i = imag[curr][pos];
+  real[curr][pos] = twiddle_real * r - twiddle_imag * i;
+  imag[curr][pos] = twiddle_imag * r + twiddle_real * i;
+
+  __syncthreads();
+
+  return forwardFFT(real, imag, offset + pos_in_unit * stride, stride * size / radix, (p+1) >> 1, curr); //radix
+
+}
+
+
+
+
+
+// 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+
+// radix = 8
+// span = size / 8 = 4
+
+// 0 4 8 12 16 20 24 28    1 5 9 13 17 21 25 29    2 6 10 14 18 22 26 30    3 7 11 15 19 23 27 31
+
+// radix = 4
+// span = size / 4 = 8
+
+
+
+// radix = 4
+// span = size / 4 = 8
+
+// 0 8 16 24    1 9 17 25    2 10 18 26    3 11 19 27    4 12 20 28    5 13 21 29    6 14 22 30   7 15 23 31
+
+// radix = 8
+// span = size / 8 = 4
+
+
+
 // __device__ char forwardFFT_arbitrary_radix(int radix, float (*real)[SIZE], float (*imag)[SIZE])
 // {
 //   int span = SIZE / radix;
@@ -451,7 +533,8 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = forwardFFT_radix4(real, imag);
+  // char curr = forwardFFT_radix4(real, imag);
+  char curr = forwardFFT_any(real, imag, 0, 1, 10, 0);
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
