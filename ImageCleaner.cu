@@ -570,8 +570,8 @@ __global__ void inverseFFTRow(float *real_image, float *imag_image)
   imag[0][col] = imag_image[offset];
 
 
-  char curr = inverseFFT_radix4(real, imag);
-  // char curr = inverseFFT(col, real, imag);
+  // char curr = inverseFFT_radix4(real, imag);
+  char curr = inverseFFT(col, real, imag);
 
   real_image[offset] = real[curr][col] / SIZE;
   imag_image[offset] = imag[curr][col] / SIZE;
@@ -591,8 +591,8 @@ __global__ void forwardFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  char curr = forwardFFT_radix4(real, imag);
-  // char curr = forwardFFT(row, real, imag);
+  // char curr = forwardFFT_radix4(real, imag);
+  char curr = forwardFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row];
   imag_image[row * SIZE + col] = imag[curr][row];
@@ -612,8 +612,8 @@ __global__ void inverseFFTCol(float *real_image, float *imag_image)
   real[0][row] = real_image[row * SIZE + col];
   imag[0][row] = imag_image[row * SIZE + col];
 
-  char curr = inverseFFT_radix4(real, imag);
-  // char curr = inverseFFT(row, real, imag);
+  // char curr = inverseFFT_radix4(real, imag);
+  char curr = inverseFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row] / SIZE;
   imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
