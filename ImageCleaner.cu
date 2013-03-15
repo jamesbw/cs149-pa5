@@ -711,6 +711,16 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaMalloc((void**)&device_imag, matSize));
 
   //todo: remove
+  printf("\n1st row real\n");
+  for (int i = 0; i < SIZE; ++i)
+  {
+    printf("%f, ", real_image[i]);
+  }
+  printf("\n1st row imag\n");
+  for (int i = 0; i < SIZE; ++i)
+  {
+    printf("%f, ", imag_image[i]);
+  }
   forwardFFTRow<<<1, SIZE, 0, filterStream>>>(device_real, device_imag);
   CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
   CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
