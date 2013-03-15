@@ -92,7 +92,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
 
 }
 
-0 4   1 5    2  6   3 7
+// 0 4   1 5    2  6   3 7
 
 
 
