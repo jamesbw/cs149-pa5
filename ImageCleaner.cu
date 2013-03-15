@@ -680,8 +680,13 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   int matSize = size_x * size_y * sizeof(float);
   //todo: remove
   matSize = SIZE * sizeof(float);
-  real_image = {0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f};
-  imag_image = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+  // real_image = {0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f};
+  // imag_image = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+  for (int i = 0; i < SIZE; ++i)
+  {
+    real_image[i] = i * 1.f;
+    imag_image[i] = 0.f;
+  }
 
   // These variables are for timing purposes
   float transferDown = 0, transferUp = 0, execution = 0;
