@@ -568,7 +568,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   roots_imag_local[threadIdx.x] = __sinf(angle);
   __syncthreads();
   if(threadIdx.x == 0 && blockIdx.x == 0)
-    printf("Print test\n");
+    printf("Print test %d\n", SIZE);
   int log_size = (SIZE == 1024 ? 10 : 9);
   char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0);
 
