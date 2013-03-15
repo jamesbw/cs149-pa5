@@ -63,6 +63,7 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
       real[next][pos] = real[curr][pos] + real[curr][pos + stride];
       imag[next][pos] = imag[curr][pos] + imag[curr][pos + stride];
     }
+    __syncthreads();
     return next;
   }
 
