@@ -7,7 +7,7 @@
 #error Please define SIZEY.
 #endif
 
-#define SIZE 8
+#define SIZE SIZEX
 #define PI     3.14159256f
 #define TWO_PI 6.28318530f
 
@@ -582,9 +582,7 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
   __syncthreads();
   if(threadIdx.x == 325 && blockIdx.x == 0)
     printf("Print test %d\n", SIZE);
-  int log_size = (SIZE == 1024 ? 10 : 9);
-  //remove
-  log_size = 1;
+  int log_size = 1;
   while ((1 << log_size) < SIZE)
     log_size +=1;
   char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0);
@@ -684,14 +682,14 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   int matSize = size_x * size_y * sizeof(float);
   //todo: remove
-  matSize = SIZE * sizeof(float);
+  // matSize = SIZE * sizeof(float);
   // real_image = {0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f};
   // imag_image = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  for (int i = 0; i < SIZE; ++i)
-  {
-    real_image[i] = i * 1.f;
-    imag_image[i] = 0.f;
-  }
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   real_image[i] = i * 1.f;
+  //   imag_image[i] = 0.f;
+  // }
 
   // These variables are for timing purposes
   float transferDown = 0, transferUp = 0, execution = 0;
@@ -715,35 +713,38 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaMalloc((void**)&device_real, matSize));
   CUDA_ERROR_CHECK(cudaMalloc((void**)&device_imag, matSize));
 
+
+
   //todo: remove
-  printf("\n1st row real\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row imag\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
-  CUDA_ERROR_CHECK(cudaMemcpy(device_real,real_image,matSize,cudaMemcpyHostToDevice));
-  CUDA_ERROR_CHECK(cudaMemcpy(device_imag,imag_image,matSize,cudaMemcpyHostToDevice));
-  forwardFFTRow<<<1, SIZE, 0, filterStream>>>(device_real, device_imag);
-  CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
+  // printf("\n1st row real\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row imag\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
+  // CUDA_ERROR_CHECK(cudaMemcpy(device_real,real_image,matSize,cudaMemcpyHostToDevice));
+  // CUDA_ERROR_CHECK(cudaMemcpy(device_imag,imag_image,matSize,cudaMemcpyHostToDevice));
+  // forwardFFTRow<<<1, SIZE, 0, filterStream>>>(device_real, device_imag);
+  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
+  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
 
-  printf("\n1st row tranform real\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", real_image[i]);
-  }
-  printf("\n1st row tranform imag\n");
-  for (int i = 0; i < SIZE; ++i)
-  {
-    printf("%f, ", imag_image[i]);
-  }
+  // printf("\n1st row tranform real\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", real_image[i]);
+  // }
+  // printf("\n1st row tranform imag\n");
+  // for (int i = 0; i < SIZE; ++i)
+  // {
+  //   printf("%f, ", imag_image[i]);
+  // }
+  // return 100.f;
 
-  return 100.f;
+  
 
   // Start timing for transfer down
   CUDA_ERROR_CHECK(cudaEventRecord(start,filterStream));
