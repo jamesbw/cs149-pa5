@@ -120,8 +120,8 @@ __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int off
   __syncthreads();
 
   int twiddle_index = pos_in_unit * unit_num * SIZE / size;
-  float twiddle_real = roots_real_local[twiddle_index];
-  float twiddle_imag = roots_imag_local[twiddle_index];
+  // float twiddle_real = roots_real_local[twiddle_index];
+  // float twiddle_imag = roots_imag_local[twiddle_index];
 
   // if (print)
   //   printf("%d: Twiddle index: %d, SIZE: %d\n", pos, twiddle_index, SIZE);
