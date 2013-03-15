@@ -45,6 +45,7 @@ __shared__ float roots_imag_local[SIZE];
 __device__ char forwardFFT_any(float (*real)[SIZE], float (*imag)[SIZE], int offset, int stride, int p, char curr)
 {
   bool print = (threadIdx.x == 325 && blockIdx.x == 0);
+  print = 1;
   int radix = 1 << ((p+1) >> 1);
   int size = 1 << p;
   char next = 1 - curr;
