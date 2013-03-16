@@ -11,12 +11,12 @@
 #define PI     3.14159256f
 #define TWO_PI 6.28318530f
 
-#if SIZE & 0x01010101 == 0
-  #define FORWARD_FFT(real, imag) forwardFFT_radix4(real, imag)
-  #define INVERSE_FFT(real, imag) inverseFFT_radix4(real, imag)
-#else
+#if SIZE & 0b101010101010100 == 0
   #define FORWARD_FFT(real, imag) forwardFFT_radix2(real, imag)
   #define INVERSE_FFT(real, imag) inverseFFT_radix2(real, imag)
+#else
+  #define FORWARD_FFT(real, imag) forwardFFT_radix4(real, imag)
+  #define INVERSE_FFT(real, imag) inverseFFT_radix4(real, imag)
 #endif
 
 //----------------------------------------------------------------
