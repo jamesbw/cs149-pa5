@@ -271,6 +271,7 @@ __device__ char forwardFFT_radix2(float (*real)[SIZE], float (*imag)[SIZE])
   int span = SIZE >> 1;
   int temp;
 
+  #pragma unroll
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
   {
     int pos_in_unit = threadIdx.x % unit_size;
@@ -330,6 +331,7 @@ __device__ char inverseFFT_radix2(float (*real)[SIZE], float (*imag)[SIZE])
   int span = SIZE >> 1;
   int temp;
 
+  #pragma unroll
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 1)
   {
     int pos_in_unit = threadIdx.x % unit_size;
