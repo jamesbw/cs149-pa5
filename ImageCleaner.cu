@@ -45,6 +45,7 @@ __device__ char forwardFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
   char curr = 0;
   char next = 1;
 
+  #pragma unroll
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 2)
   {
     int pos_in_unit = threadIdx.x % unit_size;
@@ -155,6 +156,7 @@ __device__ char inverseFFT_radix4(float (*real)[SIZE], float (*imag)[SIZE])
   char curr = 0;
   char next = 1;
 
+  #pragma unroll
   for (int unit_size = 1; unit_size < SIZE ; unit_size <<= 2)
   {
     int pos_in_unit = threadIdx.x % unit_size;
@@ -556,22 +558,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 
-
-  // forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
-
-  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
-
-  // printf("\n1st row tranform real\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", real_image[i]);
-  // }
-  // printf("\n1st row tranform imag\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", imag_image[i]);
-  // }
 
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
