@@ -11,7 +11,7 @@
 #define PI     3.14159256f
 #define TWO_PI 6.28318530f
 
-#if SIZE == 1024
+#if SIZE & 0x01010101 == 0
   #define FORWARD_FFT(real, imag) forwardFFT_radix4(real, imag)
   #define INVERSE_FFT(real, imag) inverseFFT_radix4(real, imag)
 #else
