@@ -382,27 +382,11 @@ __global__ void forwardFFTRow(float *real_image, float *imag_image)
 
 
   char curr = FORWARD_FFT(real, imag);
-  // char curr = forwardFFT(col, real, imag);
 
-
-
-
-  // float angle = - TWO_PI * threadIdx.x / SIZE;
-  // roots_real_local[threadIdx.x] = __cosf(angle);
-  // roots_imag_local[threadIdx.x] = __sinf(angle);
   __syncthreads();
-  // if(threadIdx.x == 325 && blockIdx.x == 0)
-  //   printf("Print test %d\n", SIZE);
-  // int log_size = 1;
-  // while ((1 << log_size) < SIZE)
-  //   log_size +=1;
-  // char curr = forwardFFT_any(real, imag, 0, 1, log_size, 0);
-
 
   real_image[offset] = real[curr][col];
   imag_image[offset] = imag[curr][col];
-  // if(blockIdx.x == 0)
-  //   printf("Thread %d returned %d\n", threadIdx.x, curr + 0);
 }
 
 __global__ void inverseFFTRow(float *real_image, float *imag_image)
@@ -421,7 +405,6 @@ __global__ void inverseFFTRow(float *real_image, float *imag_image)
 
 
   char curr = INVERSE_FFT(real, imag);
-  // char curr = inverseFFT(col, real, imag);
 
   real_image[offset] = real[curr][col] / SIZE;
   imag_image[offset] = imag[curr][col] / SIZE;
@@ -442,7 +425,6 @@ __global__ void forwardFFTCol(float *real_image, float *imag_image)
   imag[0][row] = imag_image[row * SIZE + col];
 
   char curr = FORWARD_FFT(real, imag);
-  // char curr = forwardFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row];
   imag_image[row * SIZE + col] = imag[curr][row];
@@ -463,7 +445,6 @@ __global__ void inverseFFTCol(float *real_image, float *imag_image)
   imag[0][row] = imag_image[row * SIZE + col];
 
   char curr = INVERSE_FFT(real, imag);
-  // char curr = inverseFFT(row, real, imag);
 
   real_image[row * SIZE + col] = real[curr][row] / SIZE;
   imag_image[row * SIZE + col] = imag[curr][row] / SIZE;
@@ -496,15 +477,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   assert(size_y == SIZEY);
 
   int matSize = size_x * size_y * sizeof(float);
-  //todo: remove
-  // matSize = SIZE * sizeof(float);
-  // real_image = {0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f};
-  // imag_image = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   real_image[i] = i * 1.f;
-  //   imag_image[i] = 0.f;
-  // }
 
   // These variables are for timing purposes
   float transferDown = 0, transferUp = 0, execution = 0;
@@ -527,39 +499,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   float *device_real, *device_imag;
   CUDA_ERROR_CHECK(cudaMalloc((void**)&device_real, matSize));
   CUDA_ERROR_CHECK(cudaMalloc((void**)&device_imag, matSize));
-
-
-
-  //todo: remove
-  // printf("\n1st row real\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", real_image[i]);
-  // }
-  // printf("\n1st row imag\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", imag_image[i]);
-  // }
-  // CUDA_ERROR_CHECK(cudaMemcpy(device_real,real_image,matSize,cudaMemcpyHostToDevice));
-  // CUDA_ERROR_CHECK(cudaMemcpy(device_imag,imag_image,matSize,cudaMemcpyHostToDevice));
-  // forwardFFTRow<<<1, SIZE, 0, filterStream>>>(device_real, device_imag);
-  // CUDA_ERROR_CHECK(cudaMemcpy(real_image,device_real,matSize,cudaMemcpyDeviceToHost));
-  // CUDA_ERROR_CHECK(cudaMemcpy(imag_image,device_imag,matSize,cudaMemcpyDeviceToHost));
-
-  // printf("\n1st row tranform real\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", real_image[i]);
-  // }
-  // printf("\n1st row tranform imag\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", imag_image[i]);
-  // }
-  // return 100.f;
-
-
 
   // Start timing for transfer down
   CUDA_ERROR_CHECK(cudaEventRecord(start,filterStream));
@@ -593,24 +532,6 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   //
   // Also note that you pass the pointers to the device memory to the kernel call
 
-  // float *pinned_real_image, *pinned_imag_image;
-  // CUDA_ERROR_CHECK(cudaMallocHost((void **) &pinned_real_image, matSize));
-  // CUDA_ERROR_CHECK(cudaMallocHost((void **) &pinned_imag_image, matSize));
-  // memcpy(pinned_real_image, real_image, matSize);
-  // memcpy(pinned_imag_image, imag_image, matSize);
-
-
-  // printf("\n1st row real\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", real_image[i]);
-  // }
-  // printf("\n1st row imag\n");
-  // for (int i = 0; i < SIZE; ++i)
-  // {
-  //   printf("%f, ", imag_image[i]);
-  // }
-
   #define ASYNC_BLOCKS 16
 
   cudaStream_t stream[ASYNC_BLOCKS];
@@ -631,13 +552,9 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, real_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     CUDA_ERROR_CHECK(cudaMemcpyAsync(device_imag + i * SIZE*SIZE/ASYNC_BLOCKS, imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyHostToDevice, stream[i]));
     forwardFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
-    // CUDA_ERROR_CHECK(cudaStreamSynchronize(stream[i]));
-    // printf(" Finished  a block\n");
   }
-  printf(" Finished  all blocka\n");
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
-  printf(" After synch\n");
 
 
   // forwardFFTRow<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
@@ -661,13 +578,10 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&fftr,start_bis,stop_bis));
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
-  printf(" Starting  cols\n");
   forwardFFTCol<<<SIZE / 4, SIZE, 0, filterStream>>>(device_real, device_imag);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&fftc,start_bis,stop_bis));
-
-  printf(" Finished  cols\n");
 
   CUDA_ERROR_CHECK(cudaEventRecord(start_bis,filterStream));
   filter<<<SIZE, SIZE, 0, filterStream>>>(device_real, device_imag);
@@ -690,13 +604,10 @@ __host__ float filterImage(float *real_image, float *imag_image, int size_x, int
     inverseFFTRow<<<SIZE / ASYNC_BLOCKS, SIZE, 0, stream[i]>>>(device_real + i * SIZE*SIZE/ASYNC_BLOCKS, device_imag + i * SIZE*SIZE/ASYNC_BLOCKS);
     CUDA_ERROR_CHECK(cudaMemcpyAsync(real_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_real + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
     CUDA_ERROR_CHECK(cudaMemcpyAsync(imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
-    // CUDA_ERROR_CHECK(cudaMemcpyAsync(pinned_real_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_real + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
-    // CUDA_ERROR_CHECK(cudaMemcpyAsync(pinned_imag_image + i * SIZE*SIZE/ASYNC_BLOCKS,device_imag + i * SIZE*SIZE/ASYNC_BLOCKS,matSize/ASYNC_BLOCKS,cudaMemcpyDeviceToHost, stream[i]));
   }
 
   CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 
-  // inverseFFTRow<<<SIZE , SIZE, 0, filterStream>>>(device_real, device_imag);
   CUDA_ERROR_CHECK(cudaEventRecord(stop_bis,filterStream));
   CUDA_ERROR_CHECK(cudaEventSynchronize(stop_bis));
   CUDA_ERROR_CHECK(cudaEventElapsedTime(&ifftr,start_bis,stop_bis));
